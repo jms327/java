@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JOJO's Bizarre Adventure · 替身使者觉醒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Serif+JP:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#f6c544;
+    --gold-deep:#c89320;
+    --gold-bright:#ffe08a;
+    --ink:#0a0a0f;
+    --ink-2:#14141c;
+    --teal:#1fb6c9;
+    --teal-glow:#3fe0f2;
+    --crimson:#e23b54;
+    --paper:#f4ecd8;
+    --line:rgba(246,197,68,.35);
+    --ok:#39d98a;
+    --err:#ff5d6c;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Noto Serif JP","Songti SC","STSong",serif;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(31,182,201,.18), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgba(226,59,84,.14), transparent 55%),
+      linear-gradient(160deg,#05050a 0%, #0c0c14 45%, #11101a 100%);
+    color:var(--paper);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow-x:hidden;
+    padding:32px 16px;
+  }
+
+  /* 背景星纹（乔斯达家纹） */
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5}
+  .star{
+    position:absolute;width:14px;height:14px;
+    background:
+      linear-gradient(135deg,transparent 44%,var(--gold) 45% 55%,transparent 56%),
+      linear-gradient(45deg,transparent 44%,var(--gold) 45% 55%,transparent 56%);
+    transform:rotate(0deg);
+    filter:drop-shadow(0 0 6px rgba(246,197,68,.6));
+    opacity:.25;
+    animation:twinkle 6s ease-in-out infinite;
+  }
+  @keyframes twinkle{0%,100%{opacity:.12;transform:scale(.8)}50%{opacity:.4;transform:scale(1.1)}}
+
+  .card{
+    position:relative;
+    z-index:2;
+    width:min(440px,100%);
+    background:linear-gradient(180deg, rgba(20,20,28,.92), rgba(10,10,16,.96));
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:38px 34px 30px;
+    backdrop-filter:blur(10px);
+    box-shadow:
+      0 0 0 1px rgba(246,197,68,.08),
+      0 30px 80px rgba(0,0,0,.6),
+      0 0 60px rgba(246,197,68,.08);
+    overflow:hidden;
+    animation:rise .9s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(120deg,transparent 30%,rgba(246,197,68,.06) 50%,transparent 70%);
+    transform:translateX(-100%);
+    animation:sheen 5s ease-in-out infinite 1s;
+  }
+  @keyframes sheen{0%,100%{transform:translateX(-100%)}55%{transform:translateX(100%)}}
+  @keyframes rise{from{opacity:0;transform:translateY(28px) scale(.98)}to{opacity:1;transform:none}}
+
+  .corner{position:absolute;width:26px;height:26px;border:2px solid var(--gold);opacity:.7}
+  .corner.tl{top:12px;left:12px;border-right:0;border-bottom:0}
+  .corner.tr{top:12px;right:12px;border-left:0;border-bottom:0}
+  .corner.bl{bottom:12px;left:12px;border-right:0;border-top:0}
+  .corner.br{bottom:12px;right:12px;border-left:0;border-top:0}
+
+  .brand{text-align:center;margin-bottom:22px}
+  .brand .jp{
+    font-family:"Noto Serif JP",serif;
+    letter-spacing:.32em;
+    color:var(--teal-glow);
+    font-size:13px;
+    font-weight:500;
+    text-shadow:0 0 12px rgba(63,224,242,.5);
+  }
+  .logo{
+    font-family:"Cinzel",serif;
+    font-weight:900;
+    font-size:46px;
+    line-height:1;
+    margin:8px 0 6px;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 55%,var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    letter-spacing:.04em;
+    filter:drop-shadow(0 3px 0 rgba(0,0,0,.4)) drop-shadow(0 0 18px rgba(246,197,68,.35));
+    position:relative;
+  }
+  .logo::after{
+    content:"JOJO";
+    position:absolute;left:2px;top:2px;
+    -webkit-background-clip:initial;background:none;color:rgba(226,59,84,.0);
+    -webkit-text-stroke:1px rgba(226,59,84,.25);
+    z-index:-1;
+  }
+  .tag{
+    display:inline-block;
+    font-size:12.5px;letter-spacing:.12em;
+    color:var(--paper);
+    padding:4px 14px;margin-top:2px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(246,197,68,.05);
+  }
+
+  form{margin-top:24px}
+  .field{position:relative;margin-bottom:20px}
+  .field input{
+    width:100%;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(246,197,68,.25);
+    border-radius:10px;
+    padding:18px 14px 8px;
+    color:var(--paper);
+    font-size:15px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color .25s, box-shadow .25s, background .25s;
+  }
+  .field input::placeholder{color:transparent}
+  .field label{
+    position:absolute;left:14px;top:14px;
+    color:#9b9486;font-size:14px;
+    pointer-events:none;
+    transition:.22s ease;
+    letter-spacing:.04em;
+  }
+  .field input:focus,
+  .field input:not(:placeholder-shown){
+    border-color:var(--gold);
+    background:rgba(246,197,68,.05);
+    box-shadow:0 0 0 3px rgba(246,197,68,.10);
+  }
+  .field input:focus + label,
+  .field input:not(:placeholder-shown) + label{
+    top:6px;font-size:11px;letter-spacing:.12em;
+    color:var(--gold-bright);
+  }
+  .field .hint{font-size:11px;margin-top:6px;color:#8a8475;padding-left:4px;min-height:14px;transition:color .2s}
+  .field.invalid input{border-color:var(--err);box-shadow:0 0 0 3px rgba(255,93,108,.12)}
+  .field.invalid .hint{color:var(--err)}
+  .field.valid input{border-color:rgba(57,217,138,.6)}
+  .field .star-mark{position:absolute;right:14px;top:16px;color:var(--teal-glow);opacity:0;font-size:13px;transition:.2s}
+  .field.valid .star-mark{opacity:1}
+
+  .strength{height:5px;border-radius:4px;margin-top:8px;background:rgba(255,255,255,.08);overflow:hidden}
+  .strength > i{display:block;height:100%;width:0;border-radius:4px;transition:width .3s, background .3s}
+
+  .row{display:flex;gap:14px}
+  .row .field{flex:1}
+
+  .terms{display:flex;align-items:flex-start;gap:10px;margin:6px 0 22px;font-size:12.5px;color:#b7b0a2}
+  .terms input{margin-top:2px;accent-color:var(--gold);width:16px;height:16px}
+  .terms a{color:var(--teal-glow);text-decoration:none;border-bottom:1px dashed rgba(63,224,242,.5)}
+
+  .submit{
+    width:100%;
+    border:none;cursor:pointer;
+    padding:15px;
+    border-radius:11px;
+    font-family:"Cinzel",serif;
+    font-weight:700;font-size:17px;letter-spacing:.16em;
+    color:#1a1407;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
+    box-shadow:0 10px 26px rgba(246,197,68,.3), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .15s, box-shadow .25s, filter .2s;
+    position:relative;overflow:hidden;
+  }
+  .submit:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(246,197,68,.45), inset 0 1px 0 rgba(255,255,255,.6)}
+  .submit:active{transform:translateY(0)}
+  .submit:disabled{filter:grayscale(.6) brightness(.8);cursor:not-allowed;box-shadow:none}
+
+  .alert{
+    display:none;margin:0 0 16px;padding:10px 14px;border-radius:10px;
+    font-size:13px;letter-spacing:.04em;
+    background:rgba(255,93,108,.12);border:1px solid rgba(255,93,108,.5);color:#ffb3bb;
+  }
+  .alert.show{display:block;animation:rise .3s both}
+  .foot{text-align:center;margin-top:18px;font-size:12.5px;color:#9b9486}
+  .foot a{color:var(--gold-bright);text-decoration:none;font-weight:700}
+
+  /* 注册 / 登录 切换 */
+  .tabs{display:flex;gap:8px;margin:0 0 8px;background:rgba(255,255,255,.04);border:1px solid rgba(246,197,68,.2);border-radius:12px;padding:5px}
+  .tab{flex:1;border:none;cursor:pointer;background:transparent;color:#b7b0a2;font-family:"Cinzel",serif;font-weight:700;font-size:14px;letter-spacing:.14em;padding:10px;border-radius:9px;transition:.25s}
+  .tab.active{color:#1a1407;background:linear-gradient(180deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));box-shadow:0 6px 16px rgba(246,197,68,.3)}
+  .hidden{display:none!important}
+
+  .tok{margin-top:18px;display:none;text-align:left;background:rgba(0,0,0,.3);border:1px solid rgba(246,197,68,.3);border-radius:10px;padding:12px}
+  .tok.show{display:block;animation:rise .4s both}
+  .tok-label{font-size:11px;letter-spacing:.14em;color:var(--teal-glow);margin-bottom:6px}
+  .tok code{display:block;word-break:break-all;font-size:10.5px;line-height:1.5;color:var(--gold-bright);background:rgba(0,0,0,.35);padding:8px;border-radius:6px;max-height:92px;overflow:auto}
+  .mini{margin-top:10px;width:100%;border:none;cursor:pointer;padding:9px;border-radius:8px;font-family:"Cinzel",serif;font-weight:700;font-size:12px;letter-spacing:.1em;color:#1a1407;background:linear-gradient(180deg,var(--teal-glow),var(--teal));transition:transform .15s}
+  .mini:hover{transform:translateY(-1px)}
+  .mini:disabled{filter:grayscale(.6) brightness(.85);cursor:not-allowed}
+  .me{margin-top:10px;font-size:12px;color:#cfc8b8;line-height:1.7;display:none}
+  .me.show{display:block}
+  .me b{color:var(--gold-bright)}
+
+  /* 觉醒成功遮罩 */
+  .awaken{
+    position:fixed;inset:0;z-index:50;
+    display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at center, rgba(20,20,28,.85), rgba(5,5,10,.97));
+    backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .5s;
+  }
+  .awaken.show{opacity:1;pointer-events:auto}
+  .awaken .inner{text-align:center;animation:pop .6s cubic-bezier(.2,1.2,.3,1) both}
+  @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .awaken .big{
+    font-family:"Cinzel",serif;font-weight:900;font-size:40px;
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 20px rgba(246,197,68,.5));
+  }
+  .awaken .ora{
+    margin-top:14px;font-size:22px;letter-spacing:.1em;color:var(--crimson);
+    font-weight:900;text-shadow:0 0 14px rgba(226,59,84,.6);
+    animation:ora 1s ease-in-out infinite;
+  }
+  @keyframes ora{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
+  .awaken .desc{margin-top:10px;color:#cfc8b8;font-size:14px;letter-spacing:.08em}
+
+  .credit{position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:11px;color:rgba(246,197,68,.35);z-index:1;letter-spacing:.1em}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="card">
+  <span class="corner tl"></span><span class="corner tr"></span>
+  <span class="corner bl"></span><span class="corner br"></span>
+
+  <div class="brand">
+    <div class="jp">ジョジョの奇妙な冒険</div>
+    <div class="logo">JOJO</div>
+    <div class="tag">替 身 使 者 觉 醒 登 录</div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab active" id="tabReg">觉 醒 注 册</button>
+    <button type="button" class="tab" id="tabLogin">替 身 登 录</button>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <form id="regForm" novalidate>
+    <div class="field" id="f-user">
+      <input type="text" id="user" name="user" placeholder="替身使者名" autocomplete="off" required>
+      <label for="user">替身使者名 / Stand User</label>
+      <span class="star-mark">★</span>
+      <div class="hint">3–16 位，字母、数字或「_」</div>
+    </div>
+
+    <div class="field" id="f-email">
+      <input type="email" id="email" name="email" placeholder="电子邮箱" autocomplete="off" required>
+      <label for="email">电子邮箱 / Email</label>
+      <span class="star-mark">★</span>
+      <div class="hint">用于接收替身觉醒通知</div>
+    </div>
+
+    <div class="field" id="f-pass">
+      <input type="password" id="pass" name="pass" placeholder="波纹密码" required>
+      <label for="pass">波纹密码 / Password</label>
+      <span class="star-mark">★</span>
+      <div class="hint">至少 8 位，含字母与数字</div>
+      <div class="strength"><i id="bar"></i></div>
+    </div>
+
+    <div class="field" id="f-confirm">
+      <input type="password" id="confirm" name="confirm" placeholder="确认波纹密码" required>
+      <label for="confirm">确认波纹密码 / Confirm</label>
+      <span class="star-mark">★</span>
+      <div class="hint">两次输入需一致</div>
+    </div>
+
+    <div class="terms">
+      <input type="checkbox" id="agree" required>
+      <label for="agree">我已理解「人类的赞歌就是勇气的赞歌」，并同意 <a href="#" onclick="return false">替身使者契约</a>。</label>
+    </div>
+
+    <button class="submit" type="submit">觉 醒 我 的 替 身</button>
+  </form>
+
+  <form id="loginForm" class="hidden" novalidate>
+    <div class="field" id="f-account">
+      <input type="text" id="account" name="account" placeholder="用户名 / 邮箱" autocomplete="off" required>
+      <label for="account">账号 / Account</label>
+      <span class="star-mark">★</span>
+      <div class="hint">可使用替身使者名或电子邮箱</div>
+    </div>
+
+    <div class="field" id="f-lpass">
+      <input type="password" id="lpass" name="lpass" placeholder="波纹密码" required>
+      <label for="lpass">波纹密码 / Password</label>
+      <span class="star-mark">★</span>
+      <div class="hint">至少 8 位</div>
+    </div>
+
+    <button class="submit" type="submit">进 入 奇 妙 冒 险</button>
+  </form>
+
+  <div class="foot" id="footReg">已有替身？ <a href="#" id="toLogin">直接登录 →</a></div>
+  <div class="foot hidden" id="footLogin">新觉醒的替身？ <a href="#" id="toReg">去注册 →</a></div>
+</div>
+
+<div class="awaken" id="awaken">
+  <div class="inner">
+    <div class="big" id="awakenBig">STAND AWAKENED</div>
+    <div class="ora" id="awakenOra">オラオラオラ！</div>
+    <div class="desc" id="awakenDesc">你的替身已觉醒，欢迎加入奇妙冒险。</div>
+    <div class="tok" id="tokBox">
+      <div class="tok-label">你的替身令牌 (JWT)</div>
+      <code id="tokCode"></code>
+      <button class="mini" type="button" id="meBtn">验证令牌 · 领取任务</button>
+      <div class="me" id="meInfo"></div>
+    </div>
+  </div>
+</div>
+
+<div class="credit">— 黄金精神 · GOLDEN SPIRIT —</div>
+
+<script>
+  // 背景星点
+  (function(){
+    const s=document.getElementById('stars');
+    for(let i=0;i<26;i++){
+      const d=document.createElement('div');
+      d.className='star';
+      d.style.left=Math.random()*100+'%';
+      d.style.top=Math.random()*100+'%';
+      d.style.animationDelay=(Math.random()*6)+'s';
+      const sc=.6+Math.random()*1.4;
+      d.style.transform='scale('+sc+')';
+      s.appendChild(d);
+    }
+  })();
+
+  const $ = id => document.getElementById(id);
+  const fUser=$('f-user'),fEmail=$('f-email'),fPass=$('f-pass'),fConfirm=$('f-confirm');
+  const user=$('user'),email=$('email'),pass=$('pass'),confirm=$('confirm'),agree=$('agree');
+  const bar=$('bar');
+
+  function setField(f,ok,msg){
+    f.classList.toggle('valid',ok);
+    f.classList.toggle('invalid',!ok);
+    if(msg!==undefined) f.querySelector('.hint').textContent=msg;
+  }
+
+  const reUser=/^[A-Za-z0-9_]{3,16}$/;
+  const reEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  user.addEventListener('input',()=>{
+    const v=user.value.trim();
+    if(!v){setField(fUser,false,'');return;}
+    const ok=reUser.test(v);
+    setField(fUser,ok, ok?'名称可用，替身已就位':'3–16 位，仅限字母、数字或「_」');
+  });
+
+  email.addEventListener('input',()=>{
+    const v=email.value.trim();
+    if(!v){setField(fEmail,false,'');return;}
+    const ok=reEmail.test(v);
+    setField(fEmail,ok, ok?'邮箱格式正确':'请输入有效的电子邮箱');
+  });
+
+  pass.addEventListener('input',()=>{
+    const v=pass.value;
+    let score=0;
+    if(v.length>=8)score++;
+    if(/[A-Za-z]/.test(v)&&/\d/.test(v))score++;
+    if(/[^A-Za-z0-9]/.test(v))score++;
+    if(v.length>=12)score++;
+    const colors=['#ff5d6c','#ff9f43','#f6c544','#39d98a'];
+    const pct=[0,30,65,100][Math.min(score,3)];
+    bar.style.width=pct+'%';
+    bar.style.background=colors[Math.min(score,3)];
+    const ok=v.length>=8 && /[A-Za-z]/.test(v) && /\d/.test(v);
+    setField(fPass,ok||!v, ok?'波纹强度足够':'至少 8 位，含字母与数字');
+    // 同步确认
+    if(confirm.value) confirm.dispatchEvent(new Event('input'));
+  });
+
+  confirm.addEventListener('input',()=>{
+    const v=confirm.value;
+    if(!v){setField(fConfirm,false,'');return;}
+    const ok=v===pass.value && v.length>0;
+    setField(fConfirm,ok, ok?'两次输入一致':'与波纹密码不一致');
+  });
+
+  function allValid(){
+    return reUser.test(user.value.trim()) &&
+           reEmail.test(email.value.trim()) &&
+           pass.value.length>=8 && /[A-Za-z]/.test(pass.value) && /\d/.test(pass.value) &&
+           confirm.value===pass.value && confirm.value.length>0 &&
+           agree.checked;
+  }
+
+  function showError(msg){
+    const a=$('alert');
+    a.textContent='⚠ '+(msg||'注册失败，请稍后再试');
+    a.classList.add('show');
+    clearTimeout(a._t);
+    a._t=setTimeout(()=>a.classList.remove('show'),4500);
+  }
+
+  $('regForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!allValid()){
+      // 触发校验提示
+      user.dispatchEvent(new Event('input'));
+      email.dispatchEvent(new Event('input'));
+      pass.dispatchEvent(new Event('input'));
+      confirm.dispatchEvent(new Event('input'));
+      if(!agree.checked) agree.parentElement.style.color='#ff5d6c';
+      return;
+    }
+    const btn=e.target.querySelector('.submit');
+    const orig=btn.textContent;
+    btn.disabled=true; btn.textContent='觉醒中…';
+    fetch('/api/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username:user.value.trim(),
+        email:email.value.trim(),
+        password:pass.value,
+        confirmPassword:confirm.value
+      })
+    })
+    .then(r=>r.json())
+    .then(res=>{
+      if(res && res.code===0){
+        const token = res.data && res.data.token;
+        if(token){ localStorage.setItem('jojo_token', token); }
+        $('awakenBig').textContent='STAND AWAKENED';
+        $('awakenOra').textContent='オラオラオラ！';
+        $('awakenDesc').textContent='欢迎，'+user.value.trim()+'！你的替身已觉醒，奇妙冒险正式开始。';
+        if(token){
+          $('tokCode').textContent=token;
+          $('tokBox').classList.add('show');
+          $('meInfo').classList.remove('show'); $('meInfo').textContent='';
+        } else {
+          $('tokBox').classList.remove('show');
+        }
+        $('awaken').classList.add('show');
+      } else {
+        showError(res && res.msg ? res.msg : '注册失败');
+      }
+    })
+    .catch(()=>{ showError('网络异常，无法连接替身中枢'); })
+    .finally(()=>{ btn.disabled=false; btn.textContent=orig; });
+  });
+
+  agree.addEventListener('change',()=>{ if(agree.checked) agree.parentElement.style.color=''; });
+
+  // ===== 注册 / 登录 切换 =====
+  const regForm=$('regForm'), loginForm=$('loginForm');
+  const tabReg=$('tabReg'), tabLogin=$('tabLogin');
+  const footReg=$('footReg'), footLogin=$('footLogin');
+  function showTab(which){
+    const isReg = which==='register';
+    regForm.classList.toggle('hidden', !isReg);
+    loginForm.classList.toggle('hidden', isReg);
+    footReg.classList.toggle('hidden', !isReg);
+    footLogin.classList.toggle('hidden', isReg);
+    tabReg.classList.toggle('active', isReg);
+    tabLogin.classList.toggle('active', !isReg);
+    $('alert').classList.remove('show');
+  }
+  tabReg.addEventListener('click',()=>showTab('register'));
+  tabLogin.addEventListener('click',()=>showTab('login'));
+  $('toLogin').addEventListener('click',e=>{e.preventDefault();showTab('login');});
+  $('toReg').addEventListener('click',e=>{e.preventDefault();showTab('register');});
+
+  // ===== 登录表单 =====
+  const fAccount=$('f-account'), fLpass=$('f-lpass');
+  const account=$('account'), lpass=$('lpass');
+  account.addEventListener('input',()=>{
+    const v=account.value.trim();
+    if(!v){setField(fAccount,false,'');return;}
+    setField(fAccount,true,'账号可用');
+  });
+  lpass.addEventListener('input',()=>{
+    const v=lpass.value;
+    const ok=v.length>=8;
+    setField(fLpass,ok||!v, ok?'波纹强度足够':'至少 8 位');
+  });
+  function loginValid(){ return account.value.trim().length>0 && lpass.value.length>=8; }
+
+  $('loginForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!loginValid()){
+      account.dispatchEvent(new Event('input'));
+      lpass.dispatchEvent(new Event('input'));
+      return;
+    }
+    const btn=e.target.querySelector('.submit');
+    const orig=btn.textContent;
+    btn.disabled=true; btn.textContent='验证中…';
+    fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({account:account.value.trim(), password:lpass.value})
+    })
+    .then(r=>r.json())
+    .then(res=>{
+      if(res && res.code===0){
+        const token=res.data.token;
+        localStorage.setItem('jojo_token', token);
+        $('awakenBig').textContent='WELCOME BACK';
+        $('awakenOra').textContent='トリック・オア・トリート？';
+        $('awakenDesc').textContent='欢迎回来，'+res.data.user.username+'！你的替身仍在等待。';
+        $('tokCode').textContent=token;
+        $('tokBox').classList.add('show');
+        $('meInfo').classList.remove('show'); $('meInfo').textContent='';
+        $('awaken').classList.add('show');
+      } else {
+        showError(res && res.msg ? res.msg : '登录失败');
+      }
+    })
+    .catch(()=>{ showError('网络异常，无法连接替身中枢'); })
+    .finally(()=>{ btn.disabled=false; btn.textContent=orig; });
+  });
+
+  // ===== 验证令牌：/api/me + 受保护 /api/quests =====
+  $('meBtn').addEventListener('click',()=>{
+    const token=localStorage.getItem('jojo_token');
+    const info=$('meInfo');
+    if(!token){ info.innerHTML='<b style="color:var(--err)">未找到本地令牌</b>'; info.classList.add('show'); return; }
+    const btn=$('meBtn'); btn.disabled=true; btn.textContent='验证中…';
+    info.textContent='验证中…'; info.classList.add('show');
+    fetch('/api/me',{headers:{'Authorization':'Bearer '+token}})
+    .then(r=>r.json())
+    .then(res=>{
+      if(!res || res.code!==0){
+        info.innerHTML='<b style="color:var(--err)">'+(res&&res.msg?res.msg:'验证失败')+'</b>';
+        throw new Error('me failed');
+      }
+      const u=res.data;
+      let html='<b>令牌有效 ✔</b><br>ID: '+u.id+'<br>用户名: '+u.username+'<br>邮箱: '+u.email+'<br>觉醒于: '+u.createTime;
+      return fetch('/api/quests',{headers:{'Authorization':'Bearer '+token}})
+        .then(r=>r.json())
+        .then(qr=>{
+          if(qr && qr.code===0){
+            html+='<br><br><b style="color:var(--teal-glow)">奇妙冒险任务：</b>';
+            (qr.data||[]).forEach(q=>{ html+='<br>· ['+q.rank+'] '+q.title+' — '+q.desc; });
+          } else {
+            html+='<br><span style="color:var(--err)">领取任务失败：'+(qr&&qr.msg?qr.msg:'')+'</span>';
+          }
+          info.innerHTML=html;
+        });
+    })
+    .catch(e=>{ if(e.message!=='me failed') info.textContent='网络异常'; })
+    .finally(()=>{ btn.disabled=false; btn.textContent='验证令牌 · 领取任务'; });
+  });
+
+  // 点击遮罩空白处关闭成功层（内部点击不关闭）
+  $('awaken').addEventListener('click',()=>$('awaken').classList.remove('show'));
+  $('awaken').querySelector('.inner').addEventListener('click',e=>e.stopPropagation());
+</script>
+</body>
+</html>
