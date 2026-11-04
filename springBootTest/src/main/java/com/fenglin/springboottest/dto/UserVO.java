@@ -10,6 +10,7 @@ public class UserVO {
     private Long id;
     private String username;
     private String email;
+    private String role;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;

@@ -546,3 +546,32 @@ form {
   z-index: 1;
   letter-spacing: 0.1em;
 }
+
+/* ===== 首页模式：取消登录页的居中布局 ===== */
+body.home-mode {
+  display: block;
+  padding: 0;
+  align-items: initial;
+  justify-content: initial;
+}
+
+/* ===== 「进入首页」按钮（觉醒遮罩内） ===== */
+.enter-home {
+  margin-top: 22px;
+  border: none;
+  cursor: pointer;
+  padding: 13px 44px;
+  border-radius: 11px;
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  color: #1a1407;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, var(--gold-deep));
+  box-shadow: 0 10px 26px rgba(246, 197, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: transform 0.15s, box-shadow 0.25s;
+}
+.enter-home:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(246, 197, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}

@@ -1,6 +1,39 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { register, login, me, quests } from './api.js'
+import Home from './Home.vue'
+import AdminLogin from './AdminLogin.vue'
+import AdminDashboard from './AdminDashboard.vue'
+
+// ===== 视图切换：auth（登录/注册） | home（首页） | admin-login（后台登录） | admin（后台管理） =====
+const view = ref(localStorage.getItem('jojo_token') ? 'home' : 'auth')
+watch(view, (v) => {
+  document.body.classList.toggle('home-mode', v === 'home' || v === 'admin')
+}, { immediate: true })
+
+function goHome() {
+  awakenShow.value = false
+  view.value = 'home'
+}
+function onLogout() {
+  view.value = 'auth'
+  setMode('login')
+}
+
+// ===== 后台管理系统视图切换 =====
+function onAdmin() {
+  view.value = 'admin-login'
+}
+function onAdminOk() {
+  view.value = 'admin'
+}
+function onAdminBack() {
+  view.value = 'home'
+}
+function onAdminLogout() {
+  localStorage.removeItem('jojo_admin_token')
+  view.value = 'home'
+}
 
 // ===== 背景星点（乔斯达家纹） =====
 const stars = Array.from({ length: 26 }, () => ({
@@ -271,6 +304,20 @@ function onAgreeChange() {
 </script>
 
 <template>
+  <!-- 首页视图 -->
+  <Home v-if="view === 'home'" @logout="onLogout" @to-admin="onAdmin" />
+
+  <!-- 后台管理系统：登录页（仅登录） -->
+  <AdminLogin
+    v-else-if="view === 'admin-login'"
+    @admin-ok="onAdminOk"
+    @back="onAdminBack"
+  />
+
+  <!-- 后台管理系统：数据管理控制台 -->
+  <AdminDashboard v-else-if="view === 'admin'" @admin-logout="onAdminLogout" />
+
+  <template v-else>
   <div class="stars">
     <div
       v-for="(s, i) in stars"
@@ -386,8 +433,10 @@ function onAgreeChange() {
         <button class="mini" type="button" @click="onMe" :disabled="meSubmitting">验证令牌 · 领取任务</button>
         <div class="me" :class="{ show: meInfoShow }" v-html="meInfo"></div>
       </div>
+      <button class="enter-home" type="button" @click="goHome">进 入 首 页 →</button>
     </div>
   </div>
 
   <div class="credit">— 黄金精神 · GOLDEN SPIRIT —</div>
+  </template>
 </template>
