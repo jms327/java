@@ -44,6 +44,8 @@ public class UserService {
         user.setUsername(req.getUsername());
         user.setEmail(req.getEmail());
         user.setPassword(BCrypt.hashpw(req.getPassword(), BCrypt.gensalt()));
+        // 显式指定角色，避免响应中的 role 为 null（库默认值同样是 USER）
+        user.setRole("USER");
         user.setCreateTime(LocalDateTime.now());
         userMapper.insert(user);
         return toAuthVO(user);
@@ -83,6 +85,11 @@ public class UserService {
     public UserVO getById(Long id) {
         User user = userMapper.selectById(id);
         return user == null ? null : toVO(user);
+    }
+
+    /** 用户总数（供后台概览统计） */
+    public long count() {
+        return userMapper.selectCount(null);
     }
 
     private AuthVO toAuthVO(User user) {

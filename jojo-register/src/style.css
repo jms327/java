@@ -556,6 +556,13 @@ body.home-mode {
 }
 
 /* ===== 「进入首页」按钮（觉醒遮罩内） ===== */
+.auto-enter {
+  margin-top: 18px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--teal-glow);
+  text-shadow: 0 0 10px rgba(63, 224, 242, 0.4);
+}
 .enter-home {
   margin-top: 22px;
   border: none;

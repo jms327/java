@@ -157,6 +157,36 @@ export function navItems(token) {
 }
 
 // ============================================================================
+// 【首页热门关键词】GET /api/hot-keywords
+// 期望返回：{ code: 0, data: ['杜王町', '黄金精神', ...] }
+// 失败时前端回退到内置热门词，不影响页面。
+// ============================================================================
+export function hotKeywords() {
+  return fetch('/api/hot-keywords').then((r) => r.json())
+}
+
+// ============================================================================
+// 【搜索联想】GET /api/search/suggest?q=<keyword>
+// 期望返回：{ code: 0, data: [{ rank, title, desc }] }，最多 8 条。
+// 失败时前端回退到本地按标题/描述过滤。
+// ============================================================================
+export function suggest(keyword, token) {
+  return fetch('/api/search/suggest?q=' + encodeURIComponent(keyword || ''), {
+    headers: { Authorization: 'Bearer ' + token }
+  }).then((r) => r.json())
+}
+
+// ============================================================================
+// 【任务详情】GET /api/quests/{id}
+// 期望返回：{ code: 0, data: { rank, title, desc } }；不存在时 code = 1
+// ============================================================================
+export function questDetail(id, token) {
+  return fetch('/api/quests/' + encodeURIComponent(id), {
+    headers: { Authorization: 'Bearer ' + token }
+  }).then((r) => r.json())
+}
+
+// ============================================================================
 // 【后台管理系统接口】/api/admin
 // ----------------------------------------------------------------------------
 // 仅登录（无注册），登录后凭管理员令牌对首页「奇妙任务」数据进行增删改查。
@@ -200,5 +230,62 @@ export function adminDeleteQuest(id, token) {
     method: 'DELETE',
     headers: { Authorization: 'Bearer ' + token }
   }).then((r) => r.json())
+}
+
+// ----------------------------------------------------------------------------
+// 后台通用请求：GET / POST / PUT / DELETE 一个入口，减少重复代码
+// ----------------------------------------------------------------------------
+function adminRequest(path, { method = 'GET', body, token } = {}) {
+  const opts = { method, headers: { Authorization: 'Bearer ' + token } }
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json'
+    opts.body = JSON.stringify(body)
+  }
+  return fetch('/api/admin' + path, opts).then((r) => r.json())
+}
+
+/** 后台概览统计：任务数 / 关键词数 / 导航项数 / 用户数 */
+export function adminStats(token) {
+  return adminRequest('/stats', { token })
+}
+
+/** 热门关键词列表 */
+export function adminHotKeywords(token) {
+  return adminRequest('/hot-keywords', { token })
+}
+
+/** 新增热门关键词 */
+export function adminCreateKeyword(payload, token) {
+  return adminRequest('/hot-keywords', { method: 'POST', body: payload, token })
+}
+
+/** 修改热门关键词 */
+export function adminUpdateKeyword(id, payload, token) {
+  return adminRequest('/hot-keywords/' + id, { method: 'PUT', body: payload, token })
+}
+
+/** 删除热门关键词 */
+export function adminDeleteKeyword(id, token) {
+  return adminRequest('/hot-keywords/' + id, { method: 'DELETE', token })
+}
+
+/** 导航菜单列表 */
+export function adminNavItems(token) {
+  return adminRequest('/nav', { token })
+}
+
+/** 新增导航菜单 */
+export function adminCreateNavItem(payload, token) {
+  return adminRequest('/nav', { method: 'POST', body: payload, token })
+}
+
+/** 修改导航菜单 */
+export function adminUpdateNavItem(id, payload, token) {
+  return adminRequest('/nav/' + id, { method: 'PUT', body: payload, token })
+}
+
+/** 删除导航菜单 */
+export function adminDeleteNavItem(id, token) {
+  return adminRequest('/nav/' + id, { method: 'DELETE', token })
 }
 

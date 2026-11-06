@@ -6,16 +6,46 @@ import AdminLogin from './AdminLogin.vue'
 import AdminDashboard from './AdminDashboard.vue'
 
 // ===== 视图切换：auth（登录/注册） | home（首页） | admin-login（后台登录） | admin（后台管理） =====
-const view = ref(localStorage.getItem('jojo_token') ? 'home' : 'auth')
+// 开发期预览：访问 http://localhost:5173/?preview=home 可直接查看首页（仅 dev 生效，不影响生产构建）
+const devPreviewHome =
+  import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'home'
+const view = ref(devPreviewHome || localStorage.getItem('jojo_token') ? 'home' : 'auth')
 watch(view, (v) => {
   document.body.classList.toggle('home-mode', v === 'home' || v === 'admin')
 }, { immediate: true })
 
+// 登录成功后的自动进入首页倒计时
+const countdown = ref(0)
+let cdTimer = null
+function startAutoEnter(sec) {
+  stopAutoEnter()
+  countdown.value = sec
+  cdTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(cdTimer)
+      cdTimer = null
+      goHome()
+    }
+  }, 1000)
+}
+function stopAutoEnter() {
+  clearInterval(cdTimer)
+  cdTimer = null
+  countdown.value = 0
+}
+
 function goHome() {
+  stopAutoEnter()
   awakenShow.value = false
   view.value = 'home'
 }
+function closeAwaken() {
+  stopAutoEnter()
+  awakenShow.value = false
+}
 function onLogout() {
+  stopAutoEnter()
   view.value = 'auth'
   setMode('login')
 }
@@ -28,11 +58,20 @@ function onAdminOk() {
   view.value = 'admin'
 }
 function onAdminBack() {
-  view.value = 'home'
+  // 未登录普通用户时返回登录页，避免落到无令牌的首页
+  view.value = localStorage.getItem('jojo_token') ? 'home' : 'auth'
 }
 function onAdminLogout() {
   localStorage.removeItem('jojo_admin_token')
-  view.value = 'home'
+  localStorage.removeItem('jojo_admin_name')
+  view.value = 'auth'
+  setMode('login')
+}
+/** 后台令牌过期：清掉令牌并回到后台登录页 */
+function onAdminExpired() {
+  localStorage.removeItem('jojo_admin_token')
+  localStorage.removeItem('jojo_admin_name')
+  view.value = 'admin-login'
 }
 
 // ===== 背景星点（乔斯达家纹） =====
@@ -189,6 +228,7 @@ async function onRegSubmit() {
         tokBoxShow.value = false
       }
       awakenShow.value = true
+      stopAutoEnter()
     } else {
       showError(res && res.msg ? res.msg : '注册失败')
     }
@@ -238,6 +278,8 @@ async function onLoginSubmit() {
       meInfoShow.value = false
       meInfo.value = ''
       awakenShow.value = true
+      // 登录成功 → 3 秒后自动进入首页（可随时点击「验证令牌」暂停）
+      startAutoEnter(3)
     } else {
       showError(res && res.msg ? res.msg : '登录失败')
     }
@@ -250,6 +292,7 @@ async function onLoginSubmit() {
 
 // ===== 验证令牌：/api/me + 受保护 /api/quests =====
 async function onMe() {
+  stopAutoEnter() // 查看令牌时暂停自动跳转
   const token = localStorage.getItem('jojo_token')
   if (!token) {
     meInfo.value = '<b style="color:var(--err)">未找到本地令牌</b>'
@@ -315,7 +358,12 @@ function onAgreeChange() {
   />
 
   <!-- 后台管理系统：数据管理控制台 -->
-  <AdminDashboard v-else-if="view === 'admin'" @admin-logout="onAdminLogout" />
+  <AdminDashboard
+    v-else-if="view === 'admin'"
+    @admin-logout="onAdminLogout"
+    @admin-expired="onAdminExpired"
+    @back-home="onAdminBack"
+  />
 
   <template v-else>
   <div class="stars">
@@ -421,8 +469,8 @@ function onAgreeChange() {
     </div>
   </div>
 
-  <!-- 觉醒成功遮罩 -->
-  <div class="awaken" :class="{ show: awakenShow }" @click="awakenShow = false">
+  <!-- 觉醒成功 / 登录成功遮罩 -->
+  <div class="awaken" :class="{ show: awakenShow }" @click="closeAwaken">
     <div class="inner" @click.stop>
       <div class="big">{{ awakenBig }}</div>
       <div class="ora">{{ awakenOra }}</div>
@@ -433,6 +481,7 @@ function onAgreeChange() {
         <button class="mini" type="button" @click="onMe" :disabled="meSubmitting">验证令牌 · 领取任务</button>
         <div class="me" :class="{ show: meInfoShow }" v-html="meInfo"></div>
       </div>
+      <div class="auto-enter" v-show="countdown > 0">{{ countdown }} 秒后自动进入首页…</div>
       <button class="enter-home" type="button" @click="goHome">进 入 首 页 →</button>
     </div>
   </div>

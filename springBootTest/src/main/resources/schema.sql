@@ -34,3 +34,24 @@ CREATE TABLE IF NOT EXISTS `jojo_quest` (
 -- 兼容已存在的旧表：为 description 补充默认值，避免后台新增任务时
 -- 该列无默认值导致 DataIntegrityViolationException（continue-on-error 保证幂等）。
 ALTER TABLE `jojo_quest` MODIFY COLUMN `description` VARCHAR(512) NOT NULL DEFAULT '' COMMENT '任务描述';
+
+-- 首页导航栏菜单表（后台可改文案与排序）
+CREATE TABLE IF NOT EXISTS `jojo_nav_item` (
+    `id`       BIGINT      NOT NULL AUTO_INCREMENT COMMENT '菜单ID',
+    `item_key` VARCHAR(32) NOT NULL COMMENT '菜单标识，如 home/quests/stands/archive',
+    `label`    VARCHAR(32) NOT NULL COMMENT '展示文案',
+    `sort`     INT         NOT NULL DEFAULT 0 COMMENT '展示顺序（升序）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_item_key` (`item_key`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '首页导航栏菜单表';
+
+-- 首页热门搜索关键词表（搜索框下方「热门」标签的数据来源）
+CREATE TABLE IF NOT EXISTS `jojo_hot_keyword` (
+    `id`      BIGINT      NOT NULL AUTO_INCREMENT COMMENT '关键词ID',
+    `keyword` VARCHAR(64) NOT NULL COMMENT '关键词文本',
+    `weight`  INT         NOT NULL DEFAULT 0 COMMENT '权重，越大越靠前',
+    `sort`    INT         NOT NULL DEFAULT 0 COMMENT '同权重时的展示顺序（升序）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_keyword` (`keyword`),
+    KEY `idx_weight` (`weight`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '首页热门搜索关键词表';

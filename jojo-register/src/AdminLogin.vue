@@ -35,6 +35,8 @@ async function onSubmit() {
     if (res && res.code === 0) {
       const token = res.data.token
       localStorage.setItem('jojo_admin_token', token)
+      const who = res.data.user && res.data.user.username ? res.data.user.username : account.value.trim()
+      localStorage.setItem('jojo_admin_name', who)
       emit('admin-ok')
     } else {
       showError(res && res.msg ? res.msg : '登录失败')
@@ -100,6 +102,10 @@ async function onSubmit() {
       </button>
     </form>
 
+    <div class="admin-tip">
+      <span>DEMO</span> 默认管理员 <b>admin</b> / <b>admin123</b>（无注册入口，仅管理员可进入）
+    </div>
+
     <div class="foot">
       <a href="#" @click.prevent="emit('back')">← 返回首页</a>
     </div>
@@ -107,3 +113,30 @@ async function onSubmit() {
 
   <div class="credit">— 黄金精神 · GOLDEN SPIRIT —</div>
 </template>
+
+<style scoped>
+.admin-tip {
+  margin-top: 16px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px dashed rgba(246, 197, 68, 0.28);
+  background: rgba(246, 197, 68, 0.04);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #8a8475;
+  letter-spacing: 0.02em;
+}
+.admin-tip span {
+  display: inline-block;
+  font-family: "Cinzel", serif;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #1a1407;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep));
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.admin-tip b { color: #d8d1c1; font-weight: 600; }
+</style>
