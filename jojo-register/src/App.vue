@@ -86,7 +86,6 @@ const stars = Array.from({ length: 26 }, () => ({
 const mode = ref('register') // 'register' | 'login'
 
 const user = ref('')
-const email = ref('')
 const pass = ref('')
 const confirm = ref('')
 const agree = ref(false)
@@ -102,7 +101,6 @@ const barColor = ref('#ff5d6c')
 // 字段校验状态
 const fields = reactive({
   user: { valid: false, invalid: false, hint: '3–16 位，字母、数字或「_」' },
-  email: { valid: false, invalid: false, hint: '用于接收替身觉醒通知' },
   pass: { valid: false, invalid: false, hint: '至少 8 位，含字母与数字' },
   confirm: { valid: false, invalid: false, hint: '两次输入需一致' },
   account: { valid: false, invalid: false, hint: '可使用替身使者名或电子邮箱' },
@@ -133,7 +131,6 @@ function setField(name, ok, msg) {
 }
 
 const reUser = /^[A-Za-z0-9_]{3,16}$/
-const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // ===== 注册字段校验 =====
 function onUser() {
@@ -141,13 +138,6 @@ function onUser() {
   if (!v) return setField('user', false, '')
   const ok = reUser.test(v)
   setField('user', ok, ok ? '名称可用，替身已就位' : '3–16 位，仅限字母、数字或「_」')
-}
-
-function onEmail() {
-  const v = email.value.trim()
-  if (!v) return setField('email', false, '')
-  const ok = reEmail.test(v)
-  setField('email', ok, ok ? '邮箱格式正确' : '请输入有效的电子邮箱')
 }
 
 function onPass() {
@@ -176,7 +166,6 @@ function onConfirm() {
 function allValid() {
   return (
     reUser.test(user.value.trim()) &&
-    reEmail.test(email.value.trim()) &&
     pass.value.length >= 8 &&
     /[A-Za-z]/.test(pass.value) &&
     /\d/.test(pass.value) &&
@@ -199,7 +188,6 @@ const regSubmitting = ref(false)
 async function onRegSubmit() {
   if (!allValid()) {
     onUser()
-    onEmail()
     onPass()
     onConfirm()
     if (!agree.value) agreeColor.value = '#ff5d6c'
@@ -209,7 +197,6 @@ async function onRegSubmit() {
   try {
     const res = await register({
       username: user.value.trim(),
-      email: email.value.trim(),
       password: pass.value,
       confirmPassword: confirm.value
     })
@@ -403,13 +390,6 @@ function onAgreeChange() {
         <label for="user">替身使者名 / Stand User</label>
         <span class="star-mark">★</span>
         <div class="hint">{{ fields.user.hint }}</div>
-      </div>
-
-      <div class="field" :class="{ valid: fields.email.valid, invalid: fields.email.invalid }">
-        <input type="email" id="email" v-model="email" @input="onEmail" placeholder="电子邮箱" autocomplete="off" required />
-        <label for="email">电子邮箱 / Email</label>
-        <span class="star-mark">★</span>
-        <div class="hint">{{ fields.email.hint }}</div>
       </div>
 
       <div class="field" :class="{ valid: fields.pass.valid, invalid: fields.pass.invalid }">

@@ -1,0 +1,155 @@
+{
+  "style": "tech_dark",
+  "footer": "黄金精神 · GOLDEN SPIRIT",
+  "page_numbers": true,
+  "output": "奇妙冒险平台_演示.pptx",
+  "slides": [
+    {
+      "type": "cover",
+      "title": "黄金精神 · GOLDEN SPIRIT",
+      "subtitle": "JOJO 替身使者觉醒 · 奇妙冒险平台\n项目演示与汇报",
+      "variant": "centered"
+    },
+    {
+      "type": "agenda",
+      "title": "目录",
+      "topics": [
+        "一、项目的主题风格",
+        "二、已完成功能与演示",
+        "三、前后端划分",
+        "四、数据库表讲解",
+        "五、后续规划"
+      ],
+      "highlight": 0
+    },
+    {
+      "type": "section",
+      "title": "一、项目的主题风格"
+    },
+    {
+      "type": "content",
+      "title": "主题与视觉风格",
+      "items": [
+        "主题取自《JOJO 的奇妙冒险》：替身使者觉醒、奇妙冒险任务",
+        "暗色底 + 金色（黄金精神）/ 青色（波纹·替身）霓虹辉光",
+        "乔斯达家纹星点背景、四角描边按钮、オラオラ 等梗元素",
+        "Cinzel 衬线体 + 日文假名混排，二次元 + 科技感"
+      ]
+    },
+    {
+      "type": "two_column",
+      "title": "技术栈（前后端分离）",
+      "left": [
+        "前端",
+        "Vue 3 + Vite",
+        "组件化：App / Home / AdminLogin / AdminDashboard",
+        "Vite 代理 /api → 8081"
+      ],
+      "right": [
+        "后端",
+        "Spring Boot 3 + MyBatis-Plus + MySQL",
+        "统一 {code,msg,data} 响应结构",
+        "JWT 鉴权（role=ADMIN 放行后台）"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "二、已完成功能（逐一演示）"
+    },
+    {
+      "type": "content",
+      "title": "核心链路：注册 → 登录 → 令牌 → 任务",
+      "items": [
+        "觉醒注册：用户名 + 波纹密码（强度条）+ 协议勾选；提交后 STAND AWAKENED 觉醒动画 + JWT 令牌展示（已去掉邮箱）",
+        "替身登录：用户名/邮箱登录，成功同样播放觉醒动画",
+        "验证令牌·领取任务：携带 JWT 调 /api/me 与 /api/quests，自动进入首页"
+      ]
+    },
+    {
+      "type": "content",
+      "title": "首页 & 后台管理系统",
+      "items": [
+        "首页：星点背景、搜索 + 实时联想 + 历史、热门标签、RANK D→A 筛选、任务详情弹层、退出登录；后端未就绪自动回退本地演示数据",
+        "后台（admin/admin123）：数据概览、奇妙任务 CRUD、热门关键词 CRUD、导航菜单 CRUD"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "三、哪些打通了前后端"
+    },
+    {
+      "type": "two_column",
+      "title": "前后端对照",
+      "left": [
+        "✅ 已打通（前端调真实接口，已联调）",
+        "注册 / 登录 / 令牌校验 (/api/me)",
+        "任务：列表·详情·搜索·联想",
+        "热门关键词 / 导航菜单",
+        "后台 /api/admin/* 全套 CRUD"
+      ],
+      "right": [
+        "🟡 仅前端（占位 / 未接后端）",
+        "个人中心 / 我的任务",
+        "替身图鉴 / 冒险档案（点击提示开发中）",
+        "UserController 为早期练习 demo，未对接",
+        "—— 核心链路已全部跑通 ——"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "四、数据库表讲解（库 jojo，4 张表）"
+    },
+    {
+      "type": "table",
+      "title": "数据表一览",
+      "headers": ["表名", "作用", "关键字段"],
+      "rows": [
+        ["jojo_user", "用户 / 管理员", "username(唯一) · email(可空) · password(BCrypt) · role"],
+        ["jojo_quest", "奇妙冒险任务", "rank(D/C/B/A) · title · description · sort"],
+        ["jojo_hot_keyword", "热门搜索词", "keyword · weight(权重) · sort"],
+        ["jojo_nav_item", "首页导航菜单", "item_key(唯一) · label · sort"]
+      ]
+    },
+    {
+      "type": "content",
+      "title": "数据表要点（实时数据）",
+      "items": [
+        "jojo_user：普通用户 + 管理员（role 区分）；AdminSeedRunner 自动种入 admin/admin123（幂等），当前含 1 管理员 + 若干演示账号",
+        "jojo_quest：首页卡片/搜索/后台任务管理的唯一数据源，种子 8 条",
+        "jojo_hot_keyword / jojo_nav_item：首页‘热门’标签与顶部导航均在后台维护（关键词 6 条 / 导航 4 项）",
+        "设计亮点：首页运营数据全部由后台驱动，前端只负责展示 —— 前后端分离的价值"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "五、后续规划"
+    },
+    {
+      "type": "content",
+      "title": "后续准备做的功能",
+      "items": [
+        "补齐占位页面：个人中心、我的任务、替身图鉴、冒险档案",
+        "任务 richer 化：图文详情、接取/完成状态机、奖励",
+        "社交成长：替身图鉴收集、成就等级、排行榜",
+        "运营增强：后台分页 / 搜索下沉到后端（应对数据量增长）",
+        "工程化：容器化部署、接口自动化测试、安全加固"
+      ]
+    },
+    {
+      "type": "summary",
+      "title": "总结",
+      "points": [
+        "核心链路（注册 → 登录 → 任务 → 后台）已全部前后端打通",
+        "数据库围绕‘运营数据后台驱动’设计，4 张表各司其职",
+        "少数二级页面为前端占位，待后续补齐"
+      ],
+      "conclusion": "一套标准的前后端分离全栈 Demo —— 感谢观看！"
+    },
+    {
+      "type": "quote",
+      "title": "",
+      "quote": "人类的赞歌就是勇气的赞歌",
+      "attribution": "—— 黄金精神 · GOLDEN SPIRIT"
+    }
+  ]
+}

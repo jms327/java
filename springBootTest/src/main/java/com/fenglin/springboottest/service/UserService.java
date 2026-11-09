@@ -26,10 +26,10 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
-    /** 注册：用户名/邮箱查重、两次密码校验、BCrypt 落库 */
+    /** 注册：用户名查重、两次密码校验、BCrypt 落库；邮箱为可选项 */
     public AuthVO register(RegisterRequest req) {
-        if (isBlank(req.getUsername()) || isBlank(req.getEmail()) || isBlank(req.getPassword())) {
-            throw new IllegalArgumentException("替身使者名、邮箱与波纹密码均不能为空");
+        if (isBlank(req.getUsername()) || isBlank(req.getPassword())) {
+            throw new IllegalArgumentException("替身使者名与波纹密码均不能为空");
         }
         if (!req.getPassword().equals(req.getConfirmPassword())) {
             throw new IllegalArgumentException("两次波纹密码不一致");
@@ -37,12 +37,15 @@ public class UserService {
         if (userMapper.selectCount(new QueryWrapper<User>().eq("username", req.getUsername())) > 0) {
             throw new IllegalArgumentException("该替身使者名已被觉醒");
         }
-        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", req.getEmail())) > 0) {
+        // 邮箱为可选项：仅当填写时才做唯一性校验
+        String email = req.getEmail();
+        if (!isBlank(email)
+                && userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
             throw new IllegalArgumentException("该邮箱已绑定替身");
         }
         User user = new User();
         user.setUsername(req.getUsername());
-        user.setEmail(req.getEmail());
+        user.setEmail(isBlank(email) ? null : email);
         user.setPassword(BCrypt.hashpw(req.getPassword(), BCrypt.gensalt()));
         // 显式指定角色，避免响应中的 role 为 null（库默认值同样是 USER）
         user.setRole("USER");

@@ -7,14 +7,18 @@
 CREATE TABLE IF NOT EXISTS `jojo_user` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username`    VARCHAR(64)  NOT NULL COMMENT '替身使者名',
-    `email`       VARCHAR(128) NOT NULL COMMENT '邮箱',
+    `email`       VARCHAR(128) NULL COMMENT '邮箱（注册时可不填）',
     `password`    VARCHAR(128) NOT NULL COMMENT 'BCrypt 密码哈希',
     `create_time` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '觉醒时间',
     `role`        VARCHAR(20)  NOT NULL DEFAULT 'USER' COMMENT '角色 USER/ADMIN',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`),
-    UNIQUE KEY `uk_email` (`email`)
+    UNIQUE KEY `uk_username` (`username`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '替身使者（用户）表';
+
+-- 迁移：兼容已存在的旧表，允许邮箱为空并解除邮箱唯一约束（注册不再强制邮箱）。
+-- 重复执行时 MODIFY COLUMN 幂等；DROP INDEX 若已不存在会被 continue-on-error 忽略。
+ALTER TABLE `jojo_user` MODIFY COLUMN `email` VARCHAR(128) NULL COMMENT '邮箱（注册时可不填）';
+ALTER TABLE `jojo_user` DROP INDEX `uk_email`;
 
 -- 兼容已存在的旧表：补充 role 列（首次执行成功，后续执行因列已存在报错，
 -- 但 spring.sql.init.continue-on-error=true 会忽略该错误，保证幂等）。
