@@ -166,6 +166,42 @@ export function hotKeywords() {
 }
 
 // ============================================================================
+// 【替身图鉴】GET /api/stands（公开接口，无需登录）
+// 期望返回：{ code: 0, data: [{ id, name, originalName, userName, type,
+//   destroyPower, speed, range, endurance, precision, growth, ability, quote }] }
+// ============================================================================
+export function stands() {
+  return fetch('/api/stands').then((r) => r.json())
+}
+
+// ============================================================================
+// 【冒险档案】GET /api/archives（公开接口，无需登录）
+// 期望返回：{ code: 0, data: [{ id, part, title, era, location, hero,
+//   villain, summary, highlight }] }
+// ============================================================================
+export function archives() {
+  return fetch('/api/archives').then((r) => r.json())
+}
+
+// ============================================================================
+// 【名角档案】GET /api/characters（公开接口，无需登录）
+// 期望返回：{ code: 0, data: [{ id, name, nameOriginal, alias, roleType,
+//   era, nationality, debut, personality, vampireAbility, standName,
+//   standOriginal, quotes, biography, highlight, sort }] }
+// ============================================================================
+export function characters() {
+  return fetch('/api/characters').then((r) => r.json())
+}
+
+// ============================================================================
+// 【名角详情】GET /api/characters/{id}
+// 期望返回：{ code: 0, data: {...} }；不存在时 code = 1
+// ============================================================================
+export function characterDetail(id) {
+  return fetch('/api/characters/' + encodeURIComponent(id)).then((r) => r.json())
+}
+
+// ============================================================================
 // 【搜索联想】GET /api/search/suggest?q=<keyword>
 // 期望返回：{ code: 0, data: [{ rank, title, desc }] }，最多 8 条。
 // 失败时前端回退到本地按标题/描述过滤。
@@ -287,5 +323,28 @@ export function adminUpdateNavItem(id, payload, token) {
 /** 删除导航菜单 */
 export function adminDeleteNavItem(id, token) {
   return adminRequest('/nav/' + id, { method: 'DELETE', token })
+}
+
+// ----------------------------------------------------------------------------
+// 名角档案（后台管理：增删改查）
+// ----------------------------------------------------------------------------
+/** 名角档案列表 */
+export function adminCharacters(token) {
+  return adminRequest('/characters', { token })
+}
+
+/** 新增名角档案 */
+export function adminCreateCharacter(payload, token) {
+  return adminRequest('/characters', { method: 'POST', body: payload, token })
+}
+
+/** 修改名角档案 */
+export function adminUpdateCharacter(id, payload, token) {
+  return adminRequest('/characters/' + id, { method: 'PUT', body: payload, token })
+}
+
+/** 删除名角档案 */
+export function adminDeleteCharacter(id, token) {
+  return adminRequest('/characters/' + id, { method: 'DELETE', token })
 }
 

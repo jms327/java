@@ -26,24 +26,29 @@ public class NavService {
         return navItemMapper.selectList(new QueryWrapper<NavMenuItem>().orderByAsc("sort").orderByAsc("id"));
     }
 
-    /** 首页：只需要 key + label；表为空时回退到内置菜单，保证首页不会没有导航 */
+    /** 首页：精简字段，含 icon / route / description；表为空时回退到内置菜单 */
     public List<NavItem> listNav() {
         List<NavMenuItem> rows = listAll();
         if (rows.isEmpty()) {
             return defaultNav();
         }
         return rows.stream()
-                .map(r -> new NavItem(r.getItemKey(), r.getLabel()))
+                .map(r -> new NavItem(
+                        r.getItemKey(),
+                        r.getLabel(),
+                        r.getIcon(),
+                        r.getRoute(),
+                        r.getDescription()))
                 .collect(Collectors.toList());
     }
 
     /** 首页内置菜单（导航表为空时的兜底） */
     public static List<NavItem> defaultNav() {
         return List.of(
-                new NavItem("home", "首 页"),
-                new NavItem("quests", "奇妙任务"),
-                new NavItem("stands", "替身图鉴"),
-                new NavItem("archive", "冒险档案")
+                new NavItem("home", "首 页", "🏠", "home", "回到起点"),
+                new NavItem("quests", "奇妙任务", "⚔️", "quests", "承接命运委托"),
+                new NavItem("stands", "替身图鉴", "👁️", "stands", "觉醒你的替身"),
+                new NavItem("archive", "冒险档案", "📜", "archive", "记录每一段旅程")
         );
     }
 

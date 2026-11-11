@@ -3,12 +3,18 @@ package com.fenglin.springboottest.controller;
 import com.fenglin.springboottest.common.Result;
 import com.fenglin.springboottest.dto.AdminLoginRequest;
 import com.fenglin.springboottest.dto.AuthVO;
+import com.fenglin.springboottest.entity.Archive;
+import com.fenglin.springboottest.entity.Character;
 import com.fenglin.springboottest.entity.HotKeyword;
 import com.fenglin.springboottest.entity.NavMenuItem;
 import com.fenglin.springboottest.entity.Quest;
+import com.fenglin.springboottest.entity.Stand;
+import com.fenglin.springboottest.service.ArchiveService;
+import com.fenglin.springboottest.service.CharacterService;
 import com.fenglin.springboottest.service.HotKeywordService;
 import com.fenglin.springboottest.service.NavService;
 import com.fenglin.springboottest.service.QuestService;
+import com.fenglin.springboottest.service.StandService;
 import com.fenglin.springboottest.service.UserService;
 import com.fenglin.springboottest.util.JwtUtil;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,6 +40,9 @@ import java.util.Map;
  *   <li>奇妙任务 jojo_quest —— 卡片列表、搜索、详情的数据源</li>
  *   <li>热门关键词 jojo_hot_keyword —— 搜索框下方「热门」标签</li>
  *   <li>导航菜单 jojo_nav_item —— 首页顶部导航栏</li>
+ *   <li>替身图鉴 jojo_stand —— 首页「替身图鉴」区块（公开浏览）</li>
+ *   <li>冒险档案 jojo_archive —— 首页「冒险档案」区块（公开浏览）</li>
+ *   <li>名角档案 jojo_character —— 首页「名角档案」区块（公开浏览）</li>
  * </ul>
  */
 @RestController
@@ -44,17 +53,26 @@ public class AdminController {
     private final QuestService questService;
     private final HotKeywordService hotKeywordService;
     private final NavService navService;
+    private final CharacterService characterService;
+    private final StandService standService;
+    private final ArchiveService archiveService;
     private final JwtUtil jwtUtil;
 
     public AdminController(UserService userService,
                            QuestService questService,
                            HotKeywordService hotKeywordService,
                            NavService navService,
+                           CharacterService characterService,
+                           StandService standService,
+                           ArchiveService archiveService,
                            JwtUtil jwtUtil) {
         this.userService = userService;
         this.questService = questService;
         this.hotKeywordService = hotKeywordService;
         this.navService = navService;
+        this.characterService = characterService;
+        this.standService = standService;
+        this.archiveService = archiveService;
         this.jwtUtil = jwtUtil;
     }
 
@@ -84,6 +102,9 @@ public class AdminController {
         data.put("questCount", questService.listAll().size());
         data.put("keywordCount", hotKeywordService.listOrdered().size());
         data.put("navCount", navService.listAll().size());
+        data.put("characterCount", characterService.listAll().size());
+        data.put("standCount", standService.listAll().size());
+        data.put("archiveCount", archiveService.listAll().size());
         data.put("userCount", userService.count());
         return Result.ok(data);
     }
@@ -232,6 +253,51 @@ public class AdminController {
             return Result.fail("无权限或登录已过期");
         }
         navService.remove(id);
+        return Result.ok();
+    }
+
+    // ========================================================================
+    // 名角档案（首页「名角档案」区块，公开浏览，后台可增删改）
+    // ========================================================================
+
+    @GetMapping("/characters")
+    public Result<List<Character>> listCharacters(@RequestHeader(value = "Authorization", required = false) String auth) {
+        if (!isAdmin(auth)) {
+            return Result.fail("无权限或登录已过期");
+        }
+        return Result.ok(characterService.listAll());
+    }
+
+    @PostMapping("/characters")
+    public Result<Character> createCharacter(@RequestBody Character character,
+                                            @RequestHeader(value = "Authorization", required = false) String auth) {
+        if (!isAdmin(auth)) {
+            return Result.fail("无权限或登录已过期");
+        }
+        if (isBlank(character.getName())) {
+            return Result.fail("角色名称不能为空");
+        }
+        return Result.ok(characterService.create(character));
+    }
+
+    @PutMapping("/characters/{id}")
+    public Result<Character> updateCharacter(@PathVariable("id") Long id,
+                                            @RequestBody Character character,
+                                            @RequestHeader(value = "Authorization", required = false) String auth) {
+        if (!isAdmin(auth)) {
+            return Result.fail("无权限或登录已过期");
+        }
+        character.setId(id);
+        return Result.ok(characterService.update(character));
+    }
+
+    @DeleteMapping("/characters/{id}")
+    public Result<Void> deleteCharacter(@PathVariable("id") Long id,
+                                       @RequestHeader(value = "Authorization", required = false) String auth) {
+        if (!isAdmin(auth)) {
+            return Result.fail("无权限或登录已过期");
+        }
+        characterService.remove(id);
         return Result.ok();
     }
 

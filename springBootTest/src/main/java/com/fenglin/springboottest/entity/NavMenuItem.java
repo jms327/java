@@ -27,6 +27,18 @@ public class NavMenuItem {
     /** 展示文案 */
     private String label;
 
+    /** 图标（emoji 或单字符，前端导航左侧展示） */
+    private String icon;
+
+    /**
+     * 跳转目标：页内锚点用区块 id（如 home / quests / stands / archive），
+     * 外链以 http(s) 开头，留空表示仅占位（点击提示「开发中」）。
+     */
+    private String route;
+
+    /** 副标题 / 悬浮提示，可空 */
+    private String description;
+
     /** 展示顺序（升序） */
     private Integer sort;
 }

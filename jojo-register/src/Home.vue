@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { me, quests, search, navItems, hotKeywords, suggest, questDetail } from './api.js'
+import { me, quests, search, navItems, hotKeywords, suggest, questDetail, stands, archives, characters } from './api.js'
 
 const emit = defineEmits(['logout', 'to-admin'])
 
@@ -53,25 +53,50 @@ function onPlaceholder(label) {
 
 /* ===== 导航栏 ===== */
 const navs = ref([
-  { key: 'home', label: '首 页' },
-  { key: 'quests', label: '奇妙任务' },
-  { key: 'stands', label: '替身图鉴' },
-  { key: 'archive', label: '冒险档案' }
+  { key: 'home', label: '首 页', icon: '🏠', route: 'home', description: '回到起点' },
+  { key: 'quests', label: '奇妙任务', icon: '⚔️', route: 'quests', description: '承接命运委托' },
+  { key: 'stands', label: '替身图鉴', icon: '👁️', route: 'stands', description: '觉醒你的替身' },
+  { key: 'archive', label: '冒险档案', icon: '📜', route: 'archive', description: '记录每一段旅程' },
+  { key: 'dio', label: '名角档案', icon: '🩸', route: 'dio', description: '恶人的极致' }
 ])
 const activeNav = ref('home')
 
+function scrollToRoute(route) {
+  const el = document.getElementById(route)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  else window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 function onNavClick(item) {
   userMenuOpen.value = false
-  if (item.key === 'home') {
-    activeNav.value = 'home'
+  // 外链：直接跳转
+  if (item.route && /^https?:\/\//i.test(item.route)) {
+    window.open(item.route, '_blank')
+    return
+  }
+  // 页内锚点：平滑滚动 + 高亮（找不到区块则提示开发中）
+  if (item.route && document.getElementById(item.route)) {
+    activeNav.value = item.key
     keyword.value = ''
     list.value = allList.value
     searchMsg.value = ''
     suggestOpen.value = false
+    scrollToRoute(item.route)
     return
   }
-  // 其他页面暂不实现，仅做占位提示
-  notify('「' + item.label.replace(/\s/g, '') + '」页面开发中，敬请期待')
+  notify('「' + (item.label || '').replace(/\s/g, '') + '」页面开发中，敬请期待')
+}
+
+/* 滚动监听：根据可见区块高亮当前导航（scroll-spy） */
+function refreshActiveNav() {
+  const ids = navs.value.map((n) => n.route).filter((r) => r && !/^https?:\/\//i.test(r))
+  let current = 'home'
+  for (const id of ids) {
+    const el = document.getElementById(id)
+    if (el && el.getBoundingClientRect().top <= 120) current = id
+  }
+  const match = navs.value.find((n) => n.route === current)
+  if (match) activeNav.value = match.key
 }
 
 /* ===== 搜索栏 ===== */
@@ -122,6 +147,49 @@ const list = ref([]) // 当前展示列表
 const loading = ref(true)
 const demoMode = ref(false)
 const rankFilter = ref('ALL')
+
+/* ===== 替身图鉴 / 冒险档案（公开内容，无需登录） ===== */
+const standsList = ref([])
+const archivesList = ref([])
+const standsLoading = ref(true)
+const archivesLoading = ref(true)
+
+/* ===== 名角档案（公开内容，无需登录） ===== */
+const charList = ref([])
+const charLoading = ref(true)
+
+// 文本切分辅助：语录按换行、别名按「·」、吸血鬼能力按「、」「。」拆分
+function splitLines(s) {
+  return (s || '').split('\n').map((t) => t.trim()).filter(Boolean)
+}
+function splitBy(s, sep) {
+  return (s || '').split(sep).map((t) => t.trim()).filter(Boolean)
+}
+function splitAbilities(s) {
+  return (s || '').split(/[、。]/).map((t) => t.trim()).filter(Boolean)
+}
+
+// 替身六维属性顺序与中文名（用于图鉴卡片渲染）
+const STAND_STATS = [
+  { key: 'destroyPower', label: '破坏力' },
+  { key: 'speed', label: '速度' },
+  { key: 'range', label: '射程' },
+  { key: 'endurance', label: '持续力' },
+  { key: 'precision', label: '精密度' },
+  { key: 'growth', label: '成长性' }
+]
+// 六维等级 → 进度条宽度（A=最强，∞ 视为满级）
+const STAT_WIDTH = { A: 100, B: 82, C: 64, D: 46, E: 28, '∞': 100 }
+function statWidth(v) {
+  return (STAT_WIDTH[v] != null ? STAT_WIDTH[v] : 50) + '%'
+}
+// 六维等级 → 颜色（A/B 暖金，C/D 中性，E 冷蓝，∞ 特殊）
+function statColor(v) {
+  if (v === '∞') return 'linear-gradient(90deg,#b388ff,#7c4dff)'
+  if (v === 'A' || v === 'B') return 'linear-gradient(90deg,var(--gold-bright),var(--gold-deep))'
+  if (v === 'C' || v === 'D') return 'linear-gradient(90deg,#e0c068,#c89320)'
+  return 'linear-gradient(90deg,#7fb0ff,#4f7fd6)'
+}
 
 function normalize(q, i) {
   return {
@@ -318,6 +386,7 @@ function onLogout() {
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('scroll', refreshActiveNav, { passive: true })
 
   try {
     const res = await me(token)
@@ -337,6 +406,7 @@ onMounted(async () => {
   } catch (e) {
     /* 使用内置导航 */
   }
+  refreshActiveNav()
 
   // 热门关键词（后端 /api/hot-keywords，失败保留内置）
   try {
@@ -346,12 +416,43 @@ onMounted(async () => {
     /* 使用内置热门词 */
   }
 
+  // 替身图鉴（公开接口 /api/stands，失败保留内置空列表）
+  try {
+    const res = await stands()
+    if (res && res.code === 0 && Array.isArray(res.data)) standsList.value = res.data
+  } catch (e) {
+    /* 保留空列表 */
+  } finally {
+    standsLoading.value = false
+  }
+
+  // 冒险档案（公开接口 /api/archives，失败保留内置空列表）
+  try {
+    const res = await archives()
+    if (res && res.code === 0 && Array.isArray(res.data)) archivesList.value = res.data
+  } catch (e) {
+    /* 保留空列表 */
+  } finally {
+    archivesLoading.value = false
+  }
+
+  // 名角档案（公开接口 /api/characters，失败保留内置空列表）
+  try {
+    const res = await characters()
+    if (res && res.code === 0 && Array.isArray(res.data)) charList.value = res.data
+  } catch (e) {
+    /* 保留空列表 */
+  } finally {
+    charLoading.value = false
+  }
+
   loadQuests()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', refreshActiveNav)
   clearTimeout(hintTimer)
 })
 </script>
@@ -382,9 +483,11 @@ onUnmounted(() => {
           type="button"
           class="nav-link"
           :class="{ active: activeNav === item.key }"
+          :title="item.description || item.label"
           @click="onNavClick(item)"
         >
-          {{ item.label }}
+          <span v-if="item.icon" class="nav-ico">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
         </button>
       </nav>
 
@@ -450,7 +553,7 @@ onUnmounted(() => {
     </div>
 
     <!-- ======================= 搜索区 ======================= -->
-    <section class="hero">
+    <section class="hero" id="home">
       <div class="hero-jp">スタープラチナ・ザ・ワールド</div>
       <h1 class="hero-title">奇妙冒险 · 由此开始</h1>
       <p class="hero-sub">搜索任务、替身与命运之线 —— 人类的赞歌就是勇气的赞歌</p>
@@ -532,7 +635,7 @@ onUnmounted(() => {
     </section>
 
     <!-- ======================= 内容区 ======================= -->
-    <section class="content">
+    <section class="content" id="quests">
       <div class="section-head">
         <h2>奇妙冒险任务</h2>
         <span class="line"></span>
@@ -582,6 +685,163 @@ onUnmounted(() => {
         <div class="empty-ora">オラオラ…</div>
         <p>这里空空如也，去搜索栏寻找你的命运吧</p>
         <button type="button" class="reset" @click="clearKeyword">重置筛选</button>
+      </div>
+    </section>
+
+    <!-- ======================= 替身图鉴（公开内容，页内导航锚点） ======================= -->
+    <section class="content stand-section" id="stands">
+      <div class="section-head">
+        <h2>替身图鉴</h2>
+        <span class="line"></span>
+        <span class="rank-hint">STAND ARCHIVE</span>
+      </div>
+
+      <div v-if="standsLoading" class="stand-grid">
+        <div v-for="n in 4" :key="n" class="stand-card skeleton">
+          <span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span>
+        </div>
+      </div>
+
+      <div v-else-if="standsList.length" class="stand-grid">
+        <article v-for="s in standsList" :key="s.id" class="stand-card">
+          <span class="corner tl"></span><span class="corner br"></span>
+          <div class="stand-top">
+            <div class="stand-name">
+              <h3>{{ s.name }}</h3>
+              <span class="stand-origin">{{ s.originalName }}</span>
+            </div>
+            <span class="stand-type">{{ s.type }}</span>
+          </div>
+          <div class="stand-user">使者 · {{ s.userName }}</div>
+          <ul class="stand-stats">
+            <li v-for="st in STAND_STATS" :key="st.key">
+              <span class="st-label">{{ st.label }}</span>
+              <span class="st-bar"><i :style="{ width: statWidth(s[st.key]), background: statColor(s[st.key]) }"></i></span>
+              <span class="st-val">{{ s[st.key] }}</span>
+            </li>
+          </ul>
+          <p class="stand-ability">{{ s.ability }}</p>
+          <p v-if="s.quote" class="stand-quote">“{{ s.quote }}”</p>
+        </article>
+      </div>
+
+      <div v-else class="empty">
+        <div class="empty-ora">オラオラ…</div>
+        <p>暂时没有收录任何替身，去搜索栏寻找你的命运吧</p>
+      </div>
+    </section>
+
+    <!-- ======================= 冒险档案（公开内容，页内导航锚点） ======================= -->
+    <section class="content archive-section" id="archive">
+      <div class="section-head">
+        <h2>冒险档案</h2>
+        <span class="line"></span>
+        <span class="rank-hint">ADVENTURE ARCHIVE</span>
+      </div>
+
+      <div v-if="archivesLoading" class="archive-timeline">
+        <div v-for="n in 4" :key="n" class="archive-item skeleton">
+          <span class="archive-dot"></span>
+          <div class="archive-card"><span class="sk sk-title"></span><span class="sk sk-line"></span></div>
+        </div>
+      </div>
+
+      <div v-else-if="archivesList.length" class="archive-timeline">
+        <article v-for="a in archivesList" :key="a.id" class="archive-item">
+          <span class="archive-dot"></span>
+          <div class="archive-card">
+            <div class="archive-top">
+              <span class="archive-part">{{ a.part }}</span>
+              <h3>{{ a.title }}</h3>
+            </div>
+            <div class="archive-meta">
+              <span v-if="a.era">🕰 {{ a.era }}</span>
+              <span v-if="a.location">📍 {{ a.location }}</span>
+            </div>
+            <div class="archive-roles">
+              <span class="role-hero">★ 主角 {{ a.hero }}</span>
+              <span class="role-villain">☠ 宿敌 {{ a.villain }}</span>
+            </div>
+            <p class="archive-summary">{{ a.summary }}</p>
+            <p v-if="a.highlight" class="archive-highlight">“{{ a.highlight }}”</p>
+          </div>
+        </article>
+      </div>
+
+      <div v-else class="empty">
+        <div class="empty-ora">オラオラ…</div>
+        <p>暂时没有冒险记录，去承接一段奇妙任务吧</p>
+      </div>
+    </section>
+
+    <!-- ======================= 名角档案（公开内容，页内导航锚点） ======================= -->
+    <section class="content char-section" id="dio">
+      <div class="section-head">
+        <h2>名角档案</h2>
+        <span class="line"></span>
+        <span class="rank-hint">BOSS ARCHIVE</span>
+      </div>
+
+      <div v-if="charLoading" class="char-grid">
+        <div class="char-card skeleton"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span></div>
+      </div>
+
+      <div v-else-if="charList.length" class="char-grid">
+        <article
+          v-for="c in charList"
+          :key="c.id"
+          class="char-card"
+          :class="{ boss: c.roleType && c.roleType.includes('反派') }"
+        >
+          <span class="corner tl"></span><span class="corner br"></span>
+
+          <div class="char-banner">
+            <span class="char-emblem">{{ (c.nameOriginal || '?').charAt(0) }}</span>
+            <div class="char-title">
+              <h3>{{ c.name }}</h3>
+              <span class="char-origin">{{ c.nameOriginal }}</span>
+            </div>
+            <span v-if="c.roleType && c.roleType.includes('反派')" class="boss-tag">BOSS</span>
+          </div>
+
+          <div v-if="c.alias" class="char-aliases">
+            <span v-for="(a, i) in splitBy(c.alias, '·')" :key="i" class="char-alias">{{ a }}</span>
+          </div>
+
+          <div class="char-meta">
+            <div class="cm"><span class="cm-k">定位</span><span class="cm-v">{{ c.roleType }}</span></div>
+            <div class="cm"><span class="cm-k">活跃年代</span><span class="cm-v">{{ c.era }}</span></div>
+            <div class="cm"><span class="cm-k">国籍</span><span class="cm-v">{{ c.nationality }}</span></div>
+            <div class="cm"><span class="cm-k">初登场</span><span class="cm-v">{{ c.debut }}</span></div>
+          </div>
+
+          <p v-if="c.biography" class="char-bio">{{ c.biography }}</p>
+          <p v-if="c.personality" class="char-block"><b>性格 · </b>{{ c.personality }}</p>
+
+          <div v-if="c.vampireAbility" class="char-block">
+            <b>吸血鬼能力 · </b>
+            <ul class="char-abilities">
+              <li v-for="(ab, i) in splitAbilities(c.vampireAbility)" :key="i">{{ ab }}</li>
+            </ul>
+          </div>
+
+          <div v-if="c.standName" class="char-stand">
+            <div class="cs-head">替身 · STAND</div>
+            <div class="cs-name">{{ c.standName }} <span class="cs-origin">{{ c.standOriginal }}</span></div>
+          </div>
+
+          <div v-if="c.quotes" class="char-quotes">
+            <div class="cq-head">经典语录</div>
+            <blockquote v-for="(q, i) in splitLines(c.quotes)" :key="i">“{{ q }}”</blockquote>
+          </div>
+
+          <p v-if="c.highlight" class="char-highlight">★ 名场面 · {{ c.highlight }}</p>
+        </article>
+      </div>
+
+      <div v-else class="empty">
+        <div class="empty-ora">オラオラ…</div>
+        <p>名角档案正在编纂中</p>
       </div>
     </section>
 
@@ -706,6 +966,13 @@ onUnmounted(() => {
   font-weight: 700;
   background: linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, var(--gold-deep));
   box-shadow: 0 6px 16px rgba(246, 197, 68, 0.28);
+}
+.nav-ico {
+  font-size: 15px;
+  line-height: 1;
+}
+.nav-label {
+  display: inline-block;
 }
 
 .nav-right {
@@ -1561,6 +1828,333 @@ onUnmounted(() => {
   box-shadow: 0 12px 26px rgba(246, 197, 68, 0.4);
 }
 
+/* ======================= 替身图鉴 ======================= */
+.stand-section { scroll-margin-top: 90px; }
+.stand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.stand-card {
+  position: relative;
+  padding: 22px 22px 20px;
+  border: 1px solid rgba(246, 197, 68, 0.16);
+  border-radius: 16px;
+  background:
+    radial-gradient(130% 120% at 100% 0%, rgba(246, 197, 68, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.02);
+  transition: 0.28s;
+}
+.stand-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(246, 197, 68, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+}
+.stand-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stand-name h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 21px;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  margin: 0 0 2px;
+}
+.stand-origin {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(246, 197, 68, 0.55);
+}
+.stand-type {
+  flex: none;
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid rgba(246, 197, 68, 0.35);
+  border-radius: 999px;
+  color: var(--gold-bright);
+  white-space: nowrap;
+}
+.stand-user {
+  margin: 10px 0 14px;
+  font-size: 13px;
+  color: #c9c2b4;
+  letter-spacing: 0.04em;
+}
+.stand-stats {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 12px 0;
+  border-top: 1px dashed rgba(246, 197, 68, 0.18);
+  border-bottom: 1px dashed rgba(246, 197, 68, 0.18);
+}
+.stand-stats li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 7px 0;
+}
+.st-label {
+  width: 48px;
+  flex: none;
+  font-size: 12px;
+  color: #b8b1a3;
+}
+.st-bar {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.st-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.st-val {
+  width: 26px;
+  flex: none;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-bright);
+}
+.stand-ability {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: #d6cfc1;
+}
+.stand-quote {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--gold-bright);
+  border-left: 2px solid rgba(246, 197, 68, 0.5);
+  padding-left: 10px;
+}
+
+/* ======================= 冒险档案（时间线） ======================= */
+.archive-section { scroll-margin-top: 90px; }
+.archive-timeline {
+  position: relative;
+  margin: 8px auto 0;
+  max-width: 860px;
+  padding-left: 26px;
+}
+.archive-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(246, 197, 68, 0.5), rgba(246, 197, 68, 0.08));
+}
+.archive-item {
+  position: relative;
+  margin: 0 0 22px;
+}
+.archive-dot {
+  position: absolute;
+  left: -26px;
+  top: 18px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold-bright);
+  border: 3px solid #14141c;
+  box-shadow: 0 0 0 3px rgba(246, 197, 68, 0.25);
+}
+.archive-card {
+  padding: 18px 22px;
+  border: 1px solid rgba(246, 197, 68, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: 0.28s;
+}
+.archive-card:hover {
+  border-color: rgba(246, 197, 68, 0.4);
+  background: rgba(246, 197, 68, 0.05);
+}
+.archive-top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.archive-part {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(246, 197, 68, 0.14);
+  color: var(--gold-bright);
+  letter-spacing: 0.08em;
+}
+.archive-top h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  margin: 0;
+}
+.archive-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 10px 0;
+  font-size: 13px;
+  color: #b8b1a3;
+}
+.archive-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 8px 0 12px;
+  font-size: 13px;
+}
+.role-hero { color: var(--gold-bright); }
+.role-villain { color: #e23b54; }
+.archive-summary {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #d6cfc1;
+}
+.archive-highlight {
+  margin: 0;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--gold-bright);
+}
+
+/* ======================= 名角档案（角色聚焦） ======================= */
+.char-section { scroll-margin-top: 90px; }
+.char-grid { max-width: 980px; margin: 8px auto 0; }
+.char-card {
+  position: relative;
+  padding: 26px 28px 28px;
+  border: 1px solid rgba(246, 197, 68, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(140% 120% at 100% 0%, rgba(226, 59, 84, 0.10), transparent 55%),
+    rgba(255, 255, 255, 0.02);
+  scroll-margin-top: 90px;
+}
+.char-card.boss {
+  border-color: rgba(226, 59, 84, 0.38);
+  box-shadow: 0 0 0 1px rgba(226, 59, 84, 0.12), 0 18px 40px rgba(226, 59, 84, 0.10);
+}
+.char-banner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.char-emblem {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-family: 'Cinzel', serif;
+  font-size: 34px;
+  font-weight: 700;
+  color: #1a1407;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 60%, var(--gold-deep));
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(246, 197, 68, 0.3);
+}
+.boss .char-emblem {
+  background: linear-gradient(180deg, #ff6b7e, #e23b54 60%, #9c2030);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(226, 59, 84, 0.4);
+}
+.char-title h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  margin: 0 0 4px;
+}
+.char-origin { font-size: 13px; color: #b8b1a3; letter-spacing: 0.06em; }
+.boss-tag {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff6b7e, #e23b54);
+  box-shadow: 0 6px 16px rgba(226, 59, 84, 0.4);
+}
+.char-aliases { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.char-alias {
+  font-size: 12px;
+  color: var(--gold-bright);
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(246, 197, 68, 0.25);
+  background: rgba(246, 197, 68, 0.06);
+}
+.char-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 22px;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(246, 197, 68, 0.12);
+}
+.cm { display: flex; gap: 10px; font-size: 13.5px; }
+.cm-k { flex: none; width: 64px; color: #8f897c; }
+.cm-v { color: #d6cfc1; }
+.char-bio { margin: 0 0 14px; font-size: 14.5px; line-height: 1.95; color: #d6cfc1; }
+.char-block { margin: 0 0 14px; font-size: 14px; line-height: 1.9; color: #d6cfc1; }
+.char-block b { color: var(--gold-bright); font-weight: 700; }
+.char-abilities { margin: 8px 0 0; padding-left: 18px; }
+.char-abilities li { margin: 4px 0; color: #cfc8ba; }
+.char-stand {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 59, 84, 0.28);
+  background: rgba(226, 59, 84, 0.06);
+}
+.cs-head { font-size: 11px; letter-spacing: 0.16em; color: #ff8a99; margin-bottom: 6px; }
+.cs-name { font-family: 'Cinzel', serif; font-size: 20px; color: #ff8a99; }
+.cs-origin { font-size: 13px; color: #b8b1a3; margin-left: 6px; }
+.char-quotes { margin: 0 0 14px; }
+.cq-head { font-size: 11px; letter-spacing: 0.16em; color: var(--gold-bright); margin-bottom: 8px; }
+.char-quotes blockquote {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-left: 3px solid rgba(246, 197, 68, 0.5);
+  background: rgba(246, 197, 68, 0.04);
+  font-style: italic;
+  font-size: 14px;
+  color: #e7e0d2;
+  line-height: 1.7;
+}
+.char-highlight {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--gold-bright);
+  border-top: 1px dashed rgba(246, 197, 68, 0.18);
+  padding-top: 12px;
+}
+@media (max-width: 720px) {
+  .char-meta { grid-template-columns: 1fr; }
+  .char-banner { gap: 12px; }
+  .char-emblem { width: 54px; height: 54px; font-size: 28px; }
+}
+
 /* ======================= 响应式 ======================= */
 @media (max-width: 900px) {
   .navbar { gap: 14px; padding: 12px 18px; }
@@ -1573,6 +2167,7 @@ onUnmounted(() => {
   .nav-links { order: 3; width: 100%; overflow-x: auto; padding-bottom: 2px; }
   .nav-links::-webkit-scrollbar { height: 0; }
   .nav-link { padding: 8px 14px; font-size: 13px; }
+.nav-ico { font-size: 13px; }
   .nav-right { margin-left: auto; }
   .hero { padding: 44px 16px 10px; }
   .hero-title { font-size: 27px; }

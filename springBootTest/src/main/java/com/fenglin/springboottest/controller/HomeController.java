@@ -2,10 +2,16 @@ package com.fenglin.springboottest.controller;
 
 import com.fenglin.springboottest.common.Result;
 import com.fenglin.springboottest.dto.NavItem;
+import com.fenglin.springboottest.entity.Archive;
+import com.fenglin.springboottest.entity.Character;
 import com.fenglin.springboottest.entity.Quest;
+import com.fenglin.springboottest.entity.Stand;
+import com.fenglin.springboottest.service.ArchiveService;
+import com.fenglin.springboottest.service.CharacterService;
 import com.fenglin.springboottest.service.HotKeywordService;
 import com.fenglin.springboottest.service.NavService;
 import com.fenglin.springboottest.service.QuestService;
+import com.fenglin.springboottest.service.StandService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -25,15 +31,24 @@ public class HomeController {
     private final QuestService questService;
     private final NavService navService;
     private final HotKeywordService hotKeywordService;
+    private final StandService standService;
+    private final ArchiveService archiveService;
+    private final CharacterService characterService;
     private final AuthController authController;
 
     public HomeController(QuestService questService,
                           NavService navService,
                           HotKeywordService hotKeywordService,
+                          StandService standService,
+                          ArchiveService archiveService,
+                          CharacterService characterService,
                           AuthController authController) {
         this.questService = questService;
         this.navService = navService;
         this.hotKeywordService = hotKeywordService;
+        this.standService = standService;
+        this.archiveService = archiveService;
+        this.characterService = characterService;
         this.authController = authController;
     }
 
@@ -102,5 +117,71 @@ public class HomeController {
     @GetMapping("/nav")
     public Result<List<NavItem>> nav(@RequestHeader(value = "Authorization", required = false) String auth) {
         return Result.ok(navService.listNav());
+    }
+
+    /**
+     * 替身图鉴：GET /api/stands
+     * 公开接口（参考内容，无需登录即可浏览），返回替身能力档案列表。
+     */
+    @GetMapping("/stands")
+    public Result<List<Stand>> stands() {
+        return Result.ok(standService.listAll());
+    }
+
+    /**
+     * 替身详情：GET /api/stands/{id}
+     * 公开接口；不存在时返回 code = 1。
+     */
+    @GetMapping("/stands/{id}")
+    public Result<Stand> standDetail(@PathVariable("id") Long id) {
+        Stand stand = standService.getById(id);
+        if (stand == null) {
+            return Result.fail("替身不存在或已消散");
+        }
+        return Result.ok(stand);
+    }
+
+    /**
+     * 冒险档案：GET /api/archives
+     * 公开接口（参考内容，无需登录即可浏览），返回按篇章排序的旅程档案列表。
+     */
+    @GetMapping("/archives")
+    public Result<List<Archive>> archives() {
+        return Result.ok(archiveService.listAll());
+    }
+
+    /**
+     * 档案详情：GET /api/archives/{id}
+     * 公开接口；不存在时返回 code = 1。
+     */
+    @GetMapping("/archives/{id}")
+    public Result<Archive> archiveDetail(@PathVariable("id") Long id) {
+        Archive archive = archiveService.getById(id);
+        if (archive == null) {
+            return Result.fail("档案不存在或已封存");
+        }
+        return Result.ok(archive);
+    }
+
+    /**
+     * 名角档案：GET /api/characters
+     * 公开接口（参考内容，无需登录即可浏览），返回按 sort 升序的角色档案列表。
+     */
+    @GetMapping("/characters")
+    public Result<List<Character>> characters() {
+        return Result.ok(characterService.listAll());
+    }
+
+    /**
+     * 名角详情：GET /api/characters/{id}
+     * 公开接口；不存在时返回 code = 1。
+     */
+    @GetMapping("/characters/{id}")
+    public Result<Character> characterDetail(@PathVariable("id") Long id) {
+        Character character = characterService.getById(id);
+        if (character == null) {
+            return Result.fail("该名角档案不存在或已消逝");
+        }
+        return Result.ok(character);
     }
 }
