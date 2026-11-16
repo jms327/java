@@ -28,7 +28,13 @@ CREATE TABLE IF NOT EXISTS `jojo_quest` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '任务ID',
     `rank`        VARCHAR(8)   NOT NULL COMMENT '任务等级 D/C/B/A',
     `title`       VARCHAR(128) NOT NULL COMMENT '任务标题',
-    `description` VARCHAR(512) NOT NULL COMMENT '任务描述',
+    `description` VARCHAR(512) NOT NULL COMMENT '任务描述（卡片摘要）',
+    `location`    VARCHAR(64)  DEFAULT NULL COMMENT '任务地点',
+    `chapter`     VARCHAR(32)  DEFAULT NULL COMMENT '所属篇章',
+    `objectives`  TEXT         COMMENT '行动目标（多条用换行分隔）',
+    `reward`      VARCHAR(128) DEFAULT NULL COMMENT '完成报酬',
+    `brief`       TEXT         COMMENT '任务背景长文',
+    `warning`     VARCHAR(256) DEFAULT NULL COMMENT '风险提示',
     `sort`        INT          NOT NULL DEFAULT 0 COMMENT '展示顺序（升序）',
     PRIMARY KEY (`id`),
     KEY `idx_sort` (`sort`),
@@ -37,7 +43,16 @@ CREATE TABLE IF NOT EXISTS `jojo_quest` (
 
 -- 兼容已存在的旧表：为 description 补充默认值，避免后台新增任务时
 -- 该列无默认值导致 DataIntegrityViolationException（continue-on-error 保证幂等）。
-ALTER TABLE `jojo_quest` MODIFY COLUMN `description` VARCHAR(512) NOT NULL DEFAULT '' COMMENT '任务描述';
+ALTER TABLE `jojo_quest` MODIFY COLUMN `description` VARCHAR(512) NOT NULL DEFAULT '' COMMENT '任务描述（卡片摘要）';
+
+-- 兼容已存在的旧表：补充「详细档案」字段。首次执行成功，之后因列已存在报错，
+-- 由 spring.sql.init.continue-on-error=true 忽略，保证重复启动幂等。
+ALTER TABLE `jojo_quest` ADD COLUMN `location`   VARCHAR(64)  DEFAULT NULL COMMENT '任务地点';
+ALTER TABLE `jojo_quest` ADD COLUMN `chapter`    VARCHAR(32)  DEFAULT NULL COMMENT '所属篇章';
+ALTER TABLE `jojo_quest` ADD COLUMN `objectives` TEXT         COMMENT '行动目标（多条用换行分隔）';
+ALTER TABLE `jojo_quest` ADD COLUMN `reward`     VARCHAR(128) DEFAULT NULL COMMENT '完成报酬';
+ALTER TABLE `jojo_quest` ADD COLUMN `brief`      TEXT         COMMENT '任务背景长文';
+ALTER TABLE `jojo_quest` ADD COLUMN `warning`    VARCHAR(256) DEFAULT NULL COMMENT '风险提示';
 
 -- 首页导航栏菜单表（后台可改文案与排序）
 CREATE TABLE IF NOT EXISTS `jojo_nav_item` (
@@ -77,12 +92,24 @@ CREATE TABLE IF NOT EXISTS `jojo_stand` (
     `endurance`     VARCHAR(2)   NOT NULL DEFAULT 'C' COMMENT '持续力 A~E/∞',
     `precision`     VARCHAR(2)   NOT NULL DEFAULT 'C' COMMENT '精密度 A~E/∞',
     `growth`        VARCHAR(2)   NOT NULL DEFAULT 'C' COMMENT '成长性 A~E/∞',
-    `ability`       VARCHAR(512) NOT NULL COMMENT '能力描述',
-    `quote`         VARCHAR(256) DEFAULT NULL COMMENT '经典台词',
-    `sort`          INT          NOT NULL DEFAULT 0 COMMENT '展示顺序（升序）',
+    `ability`        VARCHAR(512) NOT NULL COMMENT '能力描述（卡片摘要）',
+    `quote`          VARCHAR(256) DEFAULT NULL COMMENT '经典台词',
+    `part`           VARCHAR(32)  DEFAULT NULL COMMENT '登场篇章',
+    `ability_detail` TEXT         COMMENT '能力详解长文',
+    `weakness`       VARCHAR(512) DEFAULT NULL COMMENT '弱点 / 发动限制',
+    `evolution`      VARCHAR(256) DEFAULT NULL COMMENT '进化 / 衍生形态',
+    `battle_record`  VARCHAR(512) DEFAULT NULL COMMENT '代表战绩',
+    `sort`           INT          NOT NULL DEFAULT 0 COMMENT '展示顺序（升序）',
     PRIMARY KEY (`id`),
     KEY `idx_sort` (`sort`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '替身图鉴表';
+
+-- 兼容已存在的旧表：补充「图鉴详档」字段（continue-on-error 保证幂等）。
+ALTER TABLE `jojo_stand` ADD COLUMN `part`           VARCHAR(32)  DEFAULT NULL COMMENT '登场篇章';
+ALTER TABLE `jojo_stand` ADD COLUMN `ability_detail` TEXT         COMMENT '能力详解长文';
+ALTER TABLE `jojo_stand` ADD COLUMN `weakness`       VARCHAR(512) DEFAULT NULL COMMENT '弱点 / 发动限制';
+ALTER TABLE `jojo_stand` ADD COLUMN `evolution`      VARCHAR(256) DEFAULT NULL COMMENT '进化 / 衍生形态';
+ALTER TABLE `jojo_stand` ADD COLUMN `battle_record`  VARCHAR(512) DEFAULT NULL COMMENT '代表战绩';
 
 -- 冒险档案表（首页「冒险档案」区块数据来源，公开浏览）
 CREATE TABLE IF NOT EXISTS `jojo_archive` (

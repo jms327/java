@@ -27,7 +27,8 @@ public class QuestService {
     }
 
     /**
-     * 搜索：标题/描述模糊匹配，或等级完全匹配（不区分大小写）。
+     * 搜索：标题 / 描述 / 篇章 / 地点 / 行动目标 / 背景长文模糊匹配，或等级完全匹配（不区分大小写）。
+     * 详档字段纳入检索后，搜「杜王町」「第四部」「波纹」等也能命中对应委托。
      * 关键词为空时返回全部列表。
      */
     public List<Quest> search(String keyword) {
@@ -41,12 +42,20 @@ public class QuestService {
                 .like("description", kw)
                 .or()
                 .apply("LOWER(`rank`) = LOWER({0})", kw)
+                .or()
+                .like("chapter", kw)
+                .or()
+                .like("location", kw)
+                .or()
+                .like("objectives", kw)
+                .or()
+                .like("brief", kw)
                 .orderByAsc("sort");
         return questMapper.selectList(wrapper);
     }
 
     /**
-     * 搜索联想：只匹配标题（含等级完全匹配），按 sort 升序，最多 limit 条。
+     * 搜索联想：匹配标题 / 等级 / 篇章 / 地点，按 sort 升序，最多 limit 条。
      * 关键词为空时返回空列表，前端此时展示搜索历史。
      */
     public List<Quest> suggest(String keyword, int limit) {
@@ -59,6 +68,10 @@ public class QuestService {
                 .like("title", kw)
                 .or()
                 .apply("LOWER(`rank`) = LOWER({0})", kw)
+                .or()
+                .like("chapter", kw)
+                .or()
+                .like("location", kw)
                 .orderByAsc("sort")
                 .last("LIMIT " + size);
         return questMapper.selectList(wrapper);

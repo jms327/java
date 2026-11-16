@@ -142,7 +142,13 @@ const editorTitle = computed(() => {
 
 function openCreate(kind) {
   if (kind === 'quests') {
-    editor.value = { open: true, kind, id: null, data: { rank: 'D', title: '', desc: '', sort: questList.value.length + 1 } }
+    editor.value = {
+      open: true, kind, id: null,
+      data: {
+        rank: 'D', title: '', desc: '', sort: questList.value.length + 1,
+        location: '', chapter: '', objectives: '', reward: '', brief: '', warning: ''
+      }
+    }
   } else if (kind === 'keywords') {
     editor.value = { open: true, kind, id: null, data: { keyword: '', weight: 50, sort: keywordList.value.length + 1 } }
   } else {
@@ -152,7 +158,15 @@ function openCreate(kind) {
 
 function openEdit(kind, row) {
   if (kind === 'quests') {
-    editor.value = { open: true, kind, id: row.id, data: { rank: row.rank, title: row.title, desc: row.desc, sort: row.sort } }
+    editor.value = {
+      open: true, kind, id: row.id,
+      data: {
+        rank: row.rank, title: row.title, desc: row.desc, sort: row.sort,
+        location: row.location || '', chapter: row.chapter || '',
+        objectives: row.objectives || '', reward: row.reward || '',
+        brief: row.brief || '', warning: row.warning || ''
+      }
+    }
   } else if (kind === 'keywords') {
     editor.value = { open: true, kind, id: row.id, data: { keyword: row.keyword, weight: row.weight, sort: row.sort } }
   } else {
@@ -186,7 +200,18 @@ async function saveEditor() {
   const { kind, id, data } = editor.value
   const payload =
     kind === 'quests'
-      ? { rank: data.rank, title: data.title.trim(), desc: data.desc.trim(), sort: Number(data.sort) || 0 }
+      ? {
+          rank: data.rank,
+          title: data.title.trim(),
+          desc: data.desc.trim(),
+          sort: Number(data.sort) || 0,
+          location: (data.location || '').trim(),
+          chapter: (data.chapter || '').trim(),
+          objectives: (data.objectives || '').trim(),
+          reward: (data.reward || '').trim(),
+          brief: (data.brief || '').trim(),
+          warning: (data.warning || '').trim()
+        }
       : kind === 'keywords'
         ? { keyword: data.keyword.trim(), weight: Number(data.weight) || 0, sort: Number(data.sort) || 0 }
         : { itemKey: data.itemKey.trim(), label: data.label.trim(), sort: Number(data.sort) || 0 }
@@ -657,8 +682,27 @@ onMounted(loadAll)
             </div>
             <label>标题</label>
             <input type="text" v-model="editor.data.title" placeholder="例：杜王町的清晨" />
-            <label>描述</label>
+            <label>描述（卡片摘要）</label>
             <textarea v-model="editor.data.desc" rows="3" placeholder="例：在宁静的小镇中确认替身能力边界。"></textarea>
+
+            <details class="ed-advanced">
+              <summary>详细档案（选填）· 展开填写首页弹层内容</summary>
+              <div class="ed-adv-body">
+                <label>所属篇章</label>
+                <input type="text" v-model="editor.data.chapter" placeholder="例：第四部 · 不灭钻石" />
+                <label>任务地点</label>
+                <input type="text" v-model="editor.data.location" placeholder="例：日本 · 杜王町 葡萄丘商店街" />
+                <label>行动目标（每行一条）</label>
+                <textarea v-model="editor.data.objectives" rows="3" placeholder="每行一条，首页详情弹层会渲染成编号清单"></textarea>
+                <label>任务背景</label>
+                <textarea v-model="editor.data.brief" rows="3" placeholder="一段完整的剧情 / 委托背景"></textarea>
+                <label>完成报酬</label>
+                <input type="text" v-model="editor.data.reward" placeholder="例：波纹徽章 ×1 · 地图残页" />
+                <label>风险提示</label>
+                <input type="text" v-model="editor.data.warning" placeholder="例：切勿在便利店门口释放替身" />
+                <p class="ed-hint">全部留空也可以，首页详情弹层会自动隐藏对应区块。</p>
+              </div>
+            </details>
           </template>
 
           <!-- 关键词 -->
@@ -1193,6 +1237,23 @@ onMounted(loadAll)
   box-shadow: 0 0 0 3px rgba(246, 197, 68, 0.1);
 }
 .editor textarea { resize: vertical; }
+.ed-advanced {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(246, 197, 68, 0.22);
+}
+.ed-advanced summary {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--teal-glow);
+  list-style: none;
+  user-select: none;
+}
+.ed-advanced summary::-webkit-details-marker { display: none; }
+.ed-advanced summary::before { content: "▸ "; }
+.ed-advanced[open] summary::before { content: "▾ "; }
+.ed-adv-body { padding-bottom: 2px; }
 .ed-hint { font-size: 11px; color: #6f6a5e; margin-top: 8px; line-height: 1.6; }
 .ed-ops { display: flex; gap: 12px; margin-top: 20px; }
 .save {

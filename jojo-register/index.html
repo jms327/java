@@ -7,9 +7,15 @@
     <title>JOJO's Bizarre Adventure · 替身使者觉醒</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 字体异步加载：同步 stylesheet 在离线 / 局域网演示时会一直等到超时，
+         阻塞 DOMContentLoaded 与模块脚本执行，导致整页白屏。
+         media="print" 让浏览器不阻塞渲染，加载完成（或失败）后再切回 all；
+         字体不可用时 CSS 里的 serif 回退会自动生效，不影响布局。 -->
     <link
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Serif+JP:wght@500;700;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
   </head>
   <body>

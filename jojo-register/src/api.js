@@ -9,7 +9,7 @@
 // 下方 realRequest 会按原网页的请求格式对接 /api/* 接口。
 // ============================================================================
 
-// 已对接真实后端（springBootTest，端口 8081，经 Vite 代理转发 /api）
+// 已对接真实后端（springBootTest，192.168.68.34:8081，经 Vite 代理转发 /api）
 const USE_MOCK = false
 
 const headers = { 'Content-Type': 'application/json' }
@@ -168,10 +168,19 @@ export function hotKeywords() {
 // ============================================================================
 // 【替身图鉴】GET /api/stands（公开接口，无需登录）
 // 期望返回：{ code: 0, data: [{ id, name, originalName, userName, type,
-//   destroyPower, speed, range, endurance, precision, growth, ability, quote }] }
+//   destroyPower, speed, range, endurance, precision, growth, ability, quote,
+//   part, abilityDetail, weakness, evolution, battleRecord }] }
 // ============================================================================
 export function stands() {
   return fetch('/api/stands').then((r) => r.json())
+}
+
+// ============================================================================
+// 【替身详情】GET /api/stands/{id}（公开接口）
+// 期望返回：{ code: 0, data: {...} }；不存在时 code = 1
+// ============================================================================
+export function standDetail(id) {
+  return fetch('/api/stands/' + encodeURIComponent(id)).then((r) => r.json())
 }
 
 // ============================================================================

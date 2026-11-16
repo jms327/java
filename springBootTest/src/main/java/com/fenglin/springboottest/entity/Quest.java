@@ -24,10 +24,28 @@ public class Quest {
 
     private String title;
 
-    /** 任务描述；JSON 中以 desc 输出，对齐前端字段名；同时兼容输入 description */
+    /** 任务描述（卡片摘要）；JSON 中以 desc 输出，对齐前端字段名；同时兼容输入 description */
     @JsonProperty("desc")
     @JsonAlias("description")
     private String description;
+
+    /** 任务地点，如「日本 · 杜王町 葡萄丘商店街」 */
+    private String location;
+
+    /** 所属篇章，如「第四部 · 不灭钻石」 */
+    private String chapter;
+
+    /** 行动目标，多条以换行分隔，前端按行拆成清单 */
+    private String objectives;
+
+    /** 完成报酬 */
+    private String reward;
+
+    /** 任务背景长文 */
+    private String brief;
+
+    /** 风险提示 */
+    private String warning;
 
     private Integer sort;
 }

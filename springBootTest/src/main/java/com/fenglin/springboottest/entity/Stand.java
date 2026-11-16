@@ -51,11 +51,26 @@ public class Stand {
     /** 成长性 A~E / ∞ */
     private String growth;
 
-    /** 能力描述 */
+    /** 能力描述（卡片摘要） */
     private String ability;
 
     /** 经典台词（可空） */
     private String quote;
+
+    /** 登场篇章，如「第三部 · 星尘斗士」 */
+    private String part;
+
+    /** 能力详解长文 */
+    private String abilityDetail;
+
+    /** 弱点 / 发动限制 */
+    private String weakness;
+
+    /** 进化 / 衍生形态 */
+    private String evolution;
+
+    /** 代表战绩 */
+    private String battleRecord;
 
     /** 展示顺序（升序） */
     private Integer sort;

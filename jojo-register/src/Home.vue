@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { me, quests, search, navItems, hotKeywords, suggest, questDetail, stands, archives, characters } from './api.js'
+import { me, quests, search, navItems, hotKeywords, suggest, questDetail, stands, standDetail, archives, characters } from './api.js'
 
 const emit = defineEmits(['logout', 'to-admin'])
 
@@ -132,14 +132,63 @@ function clearHistory() {
 /* ===== 列表数据 ===== */
 const RANK_TAG = { D: '日常', C: '追踪', B: '试炼', A: '命运' }
 
-// 演示兜底数据：后端接口未就绪时用于展示前端效果
+// 演示兜底数据：后端接口未就绪 / 未登录时用于展示前端效果。
+// 字段与后端 jojo_quest 保持一致，确保详情弹层在兜底模式下也有完整档案。
 const DEMO_QUESTS = [
-  { id: 1, rank: 'D', title: '杜王町的清晨', desc: '在宁静的小镇中确认替身能力的边界，顺便买一份炸鸡块。' },
-  { id: 2, rank: 'C', title: '恶人的竞技场', desc: '击败三名虚有其表的替身使者，替杜王町清理隐患。' },
-  { id: 3, rank: 'B', title: '黄金精神试炼', desc: '于绝境中守护同伴，证明人类的赞歌就是勇气的赞歌。' },
-  { id: 4, rank: 'A', title: '命运之轮', desc: '改写一段既定的命运线，代价是你必须直面自己的过去。' },
-  { id: 5, rank: 'C', title: '星尘十字军', desc: '横跨大陆的旅途，用六十天时间找到那条通往宿命的线。' },
-  { id: 6, rank: 'B', title: '石之海的低语', desc: '在无法回头的洋流中，寻找自由与觉醒的答案。' }
+  {
+    id: 1, rank: 'D', title: '杜王町的清晨',
+    desc: '在宁静的杜王町清晨确认替身能力边界，顺便替仗助跑一趟面包店。',
+    chapter: '第四部 · 不灭钻石', location: '日本 · 杜王町 葡萄丘商店街',
+    objectives: '06:00 前抵达葡萄丘商店街，记录异常波纹读数\n与东方仗助汇合，实测替身的有效射程与持续力\n在不惊动居民的前提下完成三次能力测试',
+    reward: '波纹徽章 ×1 · 杜王町手绘地图残页',
+    brief: '1999 年的杜王町，表面是座连便利店都早早打烊的普通小镇，暗地里却因为一支「箭」涌现出越来越多的替身使者。你的第一份委托不是战斗，而是学会在人群之中隐藏「另一个自己」。',
+    warning: '切勿在便利店门口释放替身，虹村亿泰会投诉到学校。'
+  },
+  {
+    id: 2, rank: 'C', title: '恶人的竞技场',
+    desc: '在开罗旧城区连破三名虚有其表的替身使者，清出通往 DIO 宅邸的路。',
+    chapter: '第三部 · 星尘斗士', location: '埃及 · 开罗 旧城区',
+    objectives: '击退「黑檀木恶魔」的傀儡，保护同伴不被反噬\n在狭窄巷战中识破对手的替身射程\n于日落前抵达 DIO 宅邸正门，留下撤退标记',
+    reward: '星尘徽记 ×1 · 五十天倒计时沙漏',
+    brief: '距离贺莉倒下只剩不到十天。星尘十字军踏进开罗的那一刻，DIO 埋伏在城里的替身使者便逐一现身。所谓「恶人的竞技场」，从来不是公平的决斗，而是看谁先在恐惧里露出破绽。',
+    warning: '日落后的旧城区会失去所有参照物，别单独行动。'
+  },
+  {
+    id: 3, rank: 'B', title: '黄金精神试炼',
+    desc: '于绝境中守护同伴，用行动证明人类的赞歌就是勇气的赞歌。',
+    chapter: '第五部 · 黄金之风', location: '意大利 · 那不勒斯 港湾区',
+    objectives: '在队友被「伤害反射」波及前完成掩护\n不借用任何替身能力，穿越三处封锁线\n把受伤的同伴带到安全屋',
+    reward: '黄金精神勋章 · 布加拉提小队通行证',
+    brief: '「黄金精神」不写在任何替身的六维面板上。它出现在明知会受伤却仍然向前的一步里，出现在把同伴推向生路、自己留在原地的那个瞬间。这场试炼没有敌人可以被打倒。',
+    warning: '试炼期间禁止使用任何恢复类替身能力。'
+  },
+  {
+    id: 4, rank: 'A', title: '命运之轮',
+    desc: '改写一段既定的命运线，代价是必须直面自己曾被抹去的过去。',
+    chapter: '第六部 · 石之海', location: '美国 · 绿海豚街监狱 海岸塔',
+    objectives: '在宇宙重启前取回被「白蛇」夺走的记忆 DISC\n找到普奇神父记录「命运定居」的时间点\n于时间加速中保住一行人的名字，而非性命',
+    reward: '自由之钥 · 未被重写的一页日记',
+    brief: '天堂制造让时间不断加速，宇宙在一次次轮回里把所有人的命运磨成既定轨道。你被交付的不是「打赢」，而是「记住」——记住那些在新宇宙里从未存在过的人。',
+    warning: '时间加速期间记忆会被覆盖，请随身保存纸质记录。'
+  },
+  {
+    id: 5, rank: 'C', title: '杜王町幽灵传说',
+    desc: '调查小镇流传的「无人的房间」怪谈，找出替身使者留下的痕迹。',
+    chapter: '第四部 · 不灭钻石', location: '日本 · 杜王町 旧宅区',
+    objectives: '走访三户目击者，比对证词中的时间差\n确认怪谈是否源自自动操作型替身\n在天黑前封住旧宅的入口并留下警示',
+    reward: '怪谈调查笔记 · 仗助的炸鸡块优惠券',
+    brief: '杜王町的怪谈总有一个共同点：目击者说得越笃定，细节就越对不上。空无一人的二楼亮着灯、走廊尽头传来脚步——更像某个替身在没有使者的情况下，独自重复着生前的习惯。',
+    warning: '自动操作型替身按「规则」行动，别急着破门，先观察。'
+  },
+  {
+    id: 6, rank: 'B', title: '石鬼面追踪',
+    desc: '沿乔斯达家的旧档案追寻石鬼面下落，阻止下一名吸血鬼觉醒。',
+    chapter: '第一部 ~ 第二部', location: '英国 · 伦敦 → 墨西哥 · 阿兹特克遗址',
+    objectives: '破译乔纳森遗留的航船日志，锁定石鬼面的运输路线\n在遗址点燃光源，确认柱之男是否仍处休眠\n回收面具碎片，避免活体血液接触其表面',
+    reward: '波纹修业证书 · 石鬼面拓印残片',
+    brief: '一百多年前，一块阿兹特克的石鬼面把迪奥从人变成了别的东西。此后它随沉船、商队、考古队的木箱一路流转，每一次出现都伴随一整座城镇的失踪。',
+    warning: '任何情况下都不要让面具接触血液，哪怕只是一滴。'
+  }
 ]
 
 const allList = ref([]) // 原始列表（用于本地筛选、搜索联想）
@@ -196,7 +245,14 @@ function normalize(q, i) {
     id: q && q.id !== undefined ? q.id : 'i' + i,
     rank: ((q && q.rank) || 'D').toUpperCase(),
     title: (q && q.title) || '未命名冒险',
-    desc: (q && q.desc) || '暂无描述'
+    desc: (q && q.desc) || '暂无描述',
+    // 详细档案字段：全部可选，后台新建的任务没有这些值时前端自动隐藏对应区块
+    location: (q && q.location) || '',
+    chapter: (q && q.chapter) || '',
+    objectives: (q && q.objectives) || '',
+    reward: (q && q.reward) || '',
+    brief: (q && q.brief) || '',
+    warning: (q && q.warning) || ''
   }
 }
 
@@ -219,7 +275,13 @@ let suggestTimer = null
 function localSuggest(kw) {
   const q = kw.toLowerCase()
   return allList.value
-    .filter((x) => x.title.toLowerCase().includes(q) || x.rank.toLowerCase() === q)
+    .filter(
+      (x) =>
+        x.title.toLowerCase().includes(q) ||
+        x.rank.toLowerCase() === q ||
+        (x.chapter || '').toLowerCase().includes(q) ||
+        (x.location || '').toLowerCase().includes(q)
+    )
     .slice(0, 8)
 }
 
@@ -262,6 +324,37 @@ const detailOpen = ref(false)
 const detailLoading = ref(false)
 const detail = ref(null)
 const detailError = ref('')
+
+// 行动目标按换行拆成清单（种子数据中 objectives 以 \n 分隔）
+const objectiveLines = computed(() => splitLines(detail.value && detail.value.objectives))
+
+/* ===== 替身详情弹层（公开接口，无需登录） ===== */
+const standOpen = ref(false)
+const standLoading = ref(false)
+const standInfo = ref(null)
+const standError = ref('')
+
+async function openStandDetail(s) {
+  standOpen.value = true
+  standLoading.value = true
+  standError.value = ''
+  standInfo.value = { ...s } // 列表已带详档字段，先占位避免空白
+  try {
+    const res = await standDetail(s.id)
+    if (res && res.code === 0 && res.data) {
+      standInfo.value = res.data
+    } else if (res && res.code === 1) {
+      standError.value = res.msg || '替身不存在或已消散'
+    }
+  } catch (e) {
+    /* 接口异常时保留列表中的图鉴信息 */
+  } finally {
+    standLoading.value = false
+  }
+}
+function closeStandDetail() {
+  standOpen.value = false
+}
 
 async function openDetail(q) {
   detailOpen.value = true
@@ -316,7 +409,11 @@ function localSearch(kw) {
     (x) =>
       x.title.toLowerCase().includes(q) ||
       x.desc.toLowerCase().includes(q) ||
-      x.rank.toLowerCase() === q
+      x.rank.toLowerCase() === q ||
+      (x.chapter || '').toLowerCase().includes(q) ||
+      (x.location || '').toLowerCase().includes(q) ||
+      (x.objectives || '').toLowerCase().includes(q) ||
+      (x.brief || '').toLowerCase().includes(q)
   )
 }
 
@@ -373,6 +470,7 @@ function clearKeyword() {
 function onKeydown(e) {
   if (e.key === 'Escape') {
     if (detailOpen.value) detailOpen.value = false
+    if (standOpen.value) standOpen.value = false
     suggestOpen.value = false
   }
 }
@@ -674,6 +772,10 @@ onUnmounted(() => {
           </div>
           <h3>{{ q.title }}</h3>
           <p>{{ q.desc }}</p>
+          <div v-if="q.chapter || q.location" class="quest-meta">
+            <span v-if="q.chapter" class="qm-chapter">{{ q.chapter }}</span>
+            <span v-if="q.location" class="qm-location">{{ q.location }}</span>
+          </div>
           <div class="card-foot">
             <span class="star-deco">★ ★ ★</span>
             <button type="button" class="accept" @click="openDetail(q)">查看详情 →</button>
@@ -722,6 +824,10 @@ onUnmounted(() => {
           </ul>
           <p class="stand-ability">{{ s.ability }}</p>
           <p v-if="s.quote" class="stand-quote">“{{ s.quote }}”</p>
+          <div class="stand-card-foot">
+            <span v-if="s.part" class="stand-part">{{ s.part }}</span>
+            <button type="button" class="stand-more" @click="openStandDetail(s)">查看档案 →</button>
+          </div>
         </article>
       </div>
 
@@ -847,6 +953,9 @@ onUnmounted(() => {
 
     <div class="credit">— 黄金精神 · GOLDEN SPIRIT —</div>
 
+    <!-- 弹层统一传送到 body：.home 的入场动画让 computed transform 停留在单位矩阵，
+         会成为 position:fixed 的包含块，导致弹层按整页高度居中、滚动后跑出视口。 -->
+    <Teleport to="body">
     <!-- ======================= 任务详情弹层 ======================= -->
     <div class="detail-mask" :class="{ show: detailOpen }" @click="closeDetail">
       <div class="detail-card" @click.stop>
@@ -864,6 +973,29 @@ onUnmounted(() => {
           </div>
           <h3>{{ detail.title }}</h3>
           <p class="detail-desc">{{ detail.desc }}</p>
+
+          <div v-if="detail.chapter || detail.location" class="detail-meta">
+            <span v-if="detail.chapter">📖 {{ detail.chapter }}</span>
+            <span v-if="detail.location">📍 {{ detail.location }}</span>
+          </div>
+
+          <template v-if="detail.brief">
+            <div class="detail-label">任务背景 / BACKGROUND</div>
+            <p class="detail-para">{{ detail.brief }}</p>
+          </template>
+
+          <template v-if="objectiveLines.length">
+            <div class="detail-label">行动目标 / OBJECTIVES</div>
+            <ol class="detail-objectives">
+              <li v-for="(o, i) in objectiveLines" :key="i">{{ o }}</li>
+            </ol>
+          </template>
+
+          <div v-if="detail.reward" class="detail-reward">
+            <span>任务报酬 · REWARD</span>
+            <strong>{{ detail.reward }}</strong>
+          </div>
+          <div v-if="detail.warning" class="detail-warning">⚠ {{ detail.warning }}</div>
           <div v-if="detailError" class="detail-error">{{ detailError }}</div>
         </div>
 
@@ -873,6 +1005,72 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- ======================= 替身详情弹层 ======================= -->
+    <div class="detail-mask" :class="{ show: standOpen }" @click="closeStandDetail">
+      <div class="detail-card stand-detail" @click.stop>
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <button type="button" class="detail-close" @click="closeStandDetail">✕</button>
+
+        <div class="detail-jp">STAND DOSSIER</div>
+
+        <div v-if="standInfo" class="detail-body">
+          <div class="stand-detail-head">
+            <div class="stand-detail-name">
+              <h3>{{ standInfo.name }}</h3>
+              <span class="stand-origin">{{ standInfo.originalName }}</span>
+            </div>
+            <span class="stand-type">{{ standInfo.type }}</span>
+          </div>
+          <div class="detail-meta">
+            <span v-if="standInfo.part">📖 {{ standInfo.part }}</span>
+            <span v-if="standInfo.userName">🗡 使者 · {{ standInfo.userName }}</span>
+            <span v-if="standLoading" class="detail-loading">同步替身中枢…</span>
+          </div>
+
+          <ul class="stand-stats">
+            <li v-for="st in STAND_STATS" :key="st.key">
+              <span class="st-label">{{ st.label }}</span>
+              <span class="st-bar"><i :style="{ width: statWidth(standInfo[st.key]), background: statColor(standInfo[st.key]) }"></i></span>
+              <span class="st-val">{{ standInfo[st.key] }}</span>
+            </li>
+          </ul>
+
+          <div class="detail-label">能力概要 / ABILITY</div>
+          <p class="detail-para">{{ standInfo.ability }}</p>
+
+          <template v-if="standInfo.abilityDetail">
+            <div class="detail-label">能力详解 / ANALYSIS</div>
+            <p class="detail-para">{{ standInfo.abilityDetail }}</p>
+          </template>
+
+          <template v-if="standInfo.weakness">
+            <div class="detail-label">弱点与限制 / WEAKNESS</div>
+            <p class="detail-para warn-text">{{ standInfo.weakness }}</p>
+          </template>
+
+          <template v-if="standInfo.evolution">
+            <div class="detail-label">进化形态 / EVOLUTION</div>
+            <p class="detail-para">{{ standInfo.evolution }}</p>
+          </template>
+
+          <template v-if="standInfo.battleRecord">
+            <div class="detail-label">代表战绩 / RECORD</div>
+            <p class="detail-para">{{ standInfo.battleRecord }}</p>
+          </template>
+
+          <p v-if="standInfo.quote" class="stand-quote detail-quote">“{{ standInfo.quote }}”</p>
+          <div v-if="standError" class="detail-error">{{ standError }}</div>
+        </div>
+
+        <div class="detail-foot">
+          <span class="star-deco">★ ★ ★</span>
+          <button type="button" class="detail-ok" @click="closeStandDetail">关 闭</button>
+        </div>
+      </div>
+    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -1601,6 +1799,16 @@ onUnmounted(() => {
   color: #b7b0a2;
   min-height: 46px;
 }
+.quest-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.qm-chapter { color: rgba(63, 224, 242, 0.85); }
+.qm-location { color: #8f887b; }
 .card-foot {
   display: flex;
   align-items: center;
@@ -1727,7 +1935,9 @@ onUnmounted(() => {
 }
 .detail-card {
   position: relative;
-  width: min(520px, 100%);
+  width: min(620px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
   padding: 30px 30px 20px;
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(20, 20, 28, 0.98), rgba(10, 10, 16, 0.99));
@@ -1827,6 +2037,104 @@ onUnmounted(() => {
   transform: translateY(-2px);
   box-shadow: 0 12px 26px rgba(246, 197, 68, 0.4);
 }
+
+/* ===== 详细档案：任务 / 替身共用 ===== */
+.detail-card::-webkit-scrollbar { width: 7px; }
+.detail-card::-webkit-scrollbar-thumb {
+  background: rgba(246, 197, 68, 0.32);
+  border-radius: 4px;
+}
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 12px 0 18px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(63, 224, 242, 0.18);
+  background: rgba(31, 182, 201, 0.05);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: #9fc9cf;
+}
+.detail-label {
+  margin: 20px 0 8px;
+  font-family: "Cinzel", serif;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--teal-glow);
+  text-shadow: 0 0 10px rgba(63, 224, 242, 0.3);
+}
+.detail-para {
+  font-size: 13px;
+  line-height: 1.95;
+  color: #c6bfb0;
+  letter-spacing: 0.03em;
+}
+.detail-objectives {
+  margin: 0;
+  padding-left: 22px;
+  list-style: decimal;
+}
+.detail-objectives li {
+  margin: 6px 0;
+  padding-left: 4px;
+  font-size: 12.8px;
+  line-height: 1.8;
+  color: #d2cbbd;
+}
+.detail-objectives li::marker { color: var(--gold-bright); font-weight: 700; }
+.detail-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(246, 197, 68, 0.28);
+  background: rgba(246, 197, 68, 0.06);
+}
+.detail-reward span {
+  font-family: "Cinzel", serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: rgba(246, 197, 68, 0.7);
+}
+.detail-reward strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+.detail-warning {
+  margin-top: 14px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #ffcf9c;
+  background: rgba(255, 145, 60, 0.09);
+  border: 1px solid rgba(255, 145, 60, 0.3);
+}
+.warn-text { color: #e8b9a6; }
+
+/* ===== 替身详情弹层 ===== */
+.stand-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.stand-detail-name h3 {
+  font-family: 'Cinzel', 'Noto Serif JP', serif;
+  font-size: 24px;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  margin: 0 0 3px;
+}
+.stand-detail .stand-stats { margin-top: 4px; }
+.detail-quote { margin-top: 20px; }
 
 /* ======================= 替身图鉴 ======================= */
 .stand-section { scroll-margin-top: 90px; }
@@ -1937,6 +2245,32 @@ onUnmounted(() => {
   border-left: 2px solid rgba(246, 197, 68, 0.5);
   padding-left: 10px;
 }
+.stand-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(246, 197, 68, 0.18);
+}
+.stand-part {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: #8f887b;
+}
+.stand-more {
+  flex: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--teal-glow);
+  transition: 0.2s;
+}
+.stand-more:hover { text-shadow: 0 0 10px rgba(63, 224, 242, 0.7); }
 
 /* ======================= 冒险档案（时间线） ======================= */
 .archive-section { scroll-margin-top: 90px; }

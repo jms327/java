@@ -6,7 +6,7 @@ import AdminLogin from './AdminLogin.vue'
 import AdminDashboard from './AdminDashboard.vue'
 
 // ===== 视图切换：auth（登录/注册） | home（首页） | admin-login（后台登录） | admin（后台管理） =====
-// 开发期预览：访问 http://localhost:5173/?preview=home 可直接查看首页（仅 dev 生效，不影响生产构建）
+// 开发期预览：访问 http://192.168.68.34:5173/?preview=home 可直接查看首页（仅 dev 生效，不影响生产构建）
 const devPreviewHome =
   import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'home'
 const view = ref(devPreviewHome || localStorage.getItem('jojo_token') ? 'home' : 'auth')
