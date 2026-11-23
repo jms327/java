@@ -4,15 +4,26 @@ import { register, login, me, quests } from './api.js'
 import Home from './Home.vue'
 import AdminLogin from './AdminLogin.vue'
 import AdminDashboard from './AdminDashboard.vue'
+import Sbr from './Sbr.vue'
 
 // ===== 视图切换：auth（登录/注册） | home（首页） | admin-login（后台登录） | admin（后台管理） =====
 // 开发期预览：访问 http://192.168.68.34:5173/?preview=home 可直接查看首页（仅 dev 生效，不影响生产构建）
 const devPreviewHome =
   import.meta.env.DEV && new URLSearchParams(window.location.search).get('preview') === 'home'
-const view = ref(devPreviewHome || localStorage.getItem('jojo_token') ? 'home' : 'auth')
+// ?view=sbr 可直接打开「飙马野郎」专题页（无需登录）
+const forceSbr = new URLSearchParams(window.location.search).get('view') === 'sbr'
+const view = ref(forceSbr ? 'sbr' : devPreviewHome || localStorage.getItem('jojo_token') ? 'home' : 'auth')
 watch(view, (v) => {
-  document.body.classList.toggle('home-mode', v === 'home' || v === 'admin')
+  document.body.classList.toggle('home-mode', v === 'home' || v === 'admin' || v === 'sbr')
 }, { immediate: true })
+
+// ===== 飙马野郎专题页 =====
+function onSbr() {
+  view.value = 'sbr'
+}
+function onSbrBack() {
+  view.value = localStorage.getItem('jojo_token') ? 'home' : 'auth'
+}
 
 // 登录成功后的自动进入首页倒计时
 const countdown = ref(0)
@@ -335,7 +346,10 @@ function onAgreeChange() {
 
 <template>
   <!-- 首页视图 -->
-  <Home v-if="view === 'home'" @logout="onLogout" @to-admin="onAdmin" />
+  <Home v-if="view === 'home'" @logout="onLogout" @to-admin="onAdmin" @to-sbr="onSbr" />
+
+  <!-- 飙马野郎专题页（第七部） -->
+  <Sbr v-else-if="view === 'sbr'" @back="onSbrBack" />
 
   <!-- 后台管理系统：登录页（仅登录） -->
   <AdminLogin
@@ -465,6 +479,10 @@ function onAgreeChange() {
       <button class="enter-home" type="button" @click="goHome">进 入 首 页 →</button>
     </div>
   </div>
+
+  <button class="sbr-entry" type="button" @click="onSbr">
+    🐎 单开一页 · 飙马野郎 STEEL BALL RUN 专题
+  </button>
 
   <div class="credit">— 黄金精神 · GOLDEN SPIRIT —</div>
   </template>

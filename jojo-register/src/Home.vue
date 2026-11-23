@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { me, quests, search, navItems, hotKeywords, suggest, questDetail, stands, standDetail, archives, characters } from './api.js'
 
-const emit = defineEmits(['logout', 'to-admin'])
+const emit = defineEmits(['logout', 'to-admin', 'to-sbr'])
 
 /* ============================================================================
  * 首页（纯前端）
@@ -57,7 +57,8 @@ const navs = ref([
   { key: 'quests', label: '奇妙任务', icon: '⚔️', route: 'quests', description: '承接命运委托' },
   { key: 'stands', label: '替身图鉴', icon: '👁️', route: 'stands', description: '觉醒你的替身' },
   { key: 'archive', label: '冒险档案', icon: '📜', route: 'archive', description: '记录每一段旅程' },
-  { key: 'dio', label: '名角档案', icon: '🩸', route: 'dio', description: '恶人的极致' }
+  { key: 'dio', label: '名角档案', icon: '🩸', route: 'dio', description: '恶人的极致' },
+  { key: 'sbr', label: '飙马野郎', icon: '🐎', route: 'sbr', description: '第七部 · 黄金旋转的西部史诗' }
 ])
 const activeNav = ref('home')
 
@@ -69,6 +70,11 @@ function scrollToRoute(route) {
 
 function onNavClick(item) {
   userMenuOpen.value = false
+  // 独立专题页：飙马野郎
+  if (item.key === 'sbr') {
+    emit('to-sbr')
+    return
+  }
   // 外链：直接跳转
   if (item.route && /^https?:\/\//i.test(item.route)) {
     window.open(item.route, '_blank')
