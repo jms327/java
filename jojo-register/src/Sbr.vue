@@ -93,6 +93,14 @@ const scenes = [
     <!-- ============ HERO：主题背景图 ============ -->
     <header class="sbr-hero">
       <div class="hero-bg"></div>
+      <!-- 主角与主要角色肖像：半透明融入西部风景背景 -->
+      <div class="hero-cast" aria-hidden="true">
+        <span class="cast-figure cast-johnny"></span>
+        <span class="cast-figure cast-diego"></span>
+        <span class="cast-figure cast-lucy"></span>
+        <span class="cast-figure cast-valentine"></span>
+        <span class="cast-figure cast-gyro"></span>
+      </div>
       <div class="hero-veil"></div>
       <div class="hero-stars">
         <span v-for="i in 18" :key="i" :style="{ left: ((i * 37) % 96) + '%', top: ((i * 53) % 70) + '%', animationDelay: (i % 6) + 's' }">✦</span>
@@ -390,12 +398,31 @@ const scenes = [
   animation: heroZoom 24s ease-in-out infinite alternate;
 }
 @keyframes heroZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+/* 角色肖像背景层：与风景融合，不遮挡中央标题 */
+.hero-cast { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.cast-figure {
+  position: absolute; bottom: -4%; width: 19vw; height: 84%;
+  background-repeat: no-repeat; background-size: cover; background-position: center 16%;
+  opacity: .46; mix-blend-mode: screen;
+  filter: contrast(1.08) saturate(1.06) blur(.3px);
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 14%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to top, transparent 0%, #000 14%, #000 72%, transparent 100%);
+  animation: castDrift 16s ease-in-out infinite alternate;
+}
+@keyframes castDrift { from { transform: translateY(0) scale(1); } to { transform: translateY(-14px) scale(1.02); } }
+.cast-johnny { left: 3%; background-image: url('/characters/johnny.png'); animation-delay: 0s; }
+.cast-diego { left: 22%; background-image: url('/characters/diego.png'); animation-delay: -4s; }
+.cast-lucy { left: 42%; width: 16vw; opacity: .42; background-image: url('/characters/lucy.png'); animation-delay: -8s; }
+.cast-valentine { right: 22%; background-image: url('/characters/valentine.png'); animation-delay: -6s; }
+.cast-gyro { right: 3%; background-image: url('/characters/gyro.png'); animation-delay: -2s; }
+
 .hero-veil {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; z-index: 2;
   background: linear-gradient(180deg, rgba(5,5,10,.32) 0%, rgba(5,5,10,.15) 35%, rgba(5,5,10,.88) 88%, #0a0a10 100%),
               radial-gradient(70% 60% at 50% 40%, rgba(246,197,68,.12), transparent 70%);
 }
-.hero-stars { position: absolute; inset: 0; pointer-events: none; }
+.hero-stars { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .hero-stars span { position: absolute; color: var(--gold-bright, #ffe08a); font-size: 14px; opacity: .55; animation: twinkle 3.5s ease-in-out infinite; }
 @keyframes twinkle { 0%,100% { opacity: .2; transform: scale(.8); } 50% { opacity: .85; transform: scale(1.25); } }
 .sbr-back {
@@ -406,7 +433,7 @@ const scenes = [
   transition: .25s;
 }
 .sbr-back:hover { background: rgba(246,197,68,.18); box-shadow: 0 0 18px rgba(246,197,68,.35); }
-.hero-inner { position: relative; z-index: 3; text-align: center; padding: 40px 20px; }
+.hero-inner { position: relative; z-index: 4; text-align: center; padding: 40px 20px; }
 .hero-kicker { font-family: "Cinzel", Georgia, serif; letter-spacing: .48em; font-size: 12px; color: var(--teal-glow, #3fe0f2); margin-bottom: 22px; }
 .hero-title {
   font-family: "Cinzel", Georgia, serif; font-size: clamp(52px, 11vw, 132px); line-height: .92;
